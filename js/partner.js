@@ -58,16 +58,42 @@ export const UI_Helper = {
 window.UI_Helper = UI_Helper;
 
 // ==========================================
-// 3. LAZY ROUTING SYSTEM
+// 3. LAZY ROUTING SYSTEM & BACK BUTTON
 // ==========================================
 export const Router = {
-    switchView: function(viewId) {
+    historyStack: [], // keeps track of page navigation
+    
+    switchView: function(viewId, pushHistory = true) {
+        const tg = window.Telegram?.WebApp;
+
+        // Hide all views
         document.querySelectorAll('.view-section').forEach(section => {
             section.style.display = 'none';
         });
+
         const targetView = document.getElementById(viewId);
         if (targetView) {
             targetView.style.display = 'block';
+
+            // Add to history stack to remember navigation path
+            if (pushHistory) {
+                // Prevent duplicate consecutive entries
+                if (this.historyStack.length === 0 || this.historyStack[this.historyStack.length - 1] !== viewId) {
+                    this.historyStack.push(viewId);
+                }
+            }
+
+            // Telegram Native BackButton Display Logic
+            if (tg && tg.BackButton) {
+                // Only hide back button on root pages (Dashboard & Verification)
+                if (viewId === 'dashboard-view' || viewId === 'verification-view') {
+                    tg.BackButton.hide();
+                    this.historyStack = [viewId]; // Reset stack for root pages
+                } else {
+                    tg.BackButton.show();
+                }
+            }
+
             // Lazy load corresponding view controller data
             if (viewId === 'dashboard-view' && window.Dashboard_Module) {
                 window.Dashboard_Module.loadDashboardData();
@@ -77,9 +103,24 @@ export const Router = {
                 window.Dashboard_Module.checkCooldownStatus();
             }
         }
+    },
+
+    goBack: function() {
+        if (this.historyStack.length > 1) {
+            this.historyStack.pop(); // Remove current view from stack
+            const previousView = this.historyStack[this.historyStack.length - 1]; // Get last view
+            this.switchView(previousView, false); // false prevents pushing again
+        }
     }
 };
 window.Router = Router;
+
+// Handle Global Back Button Click Event exactly ONCE
+if (window.Telegram?.WebApp?.BackButton) {
+    window.Telegram.WebApp.BackButton.onClick(() => {
+        Router.goBack();
+    });
+}
 
 // ==========================================
 // 4. APP INITIALIZATION & VERIFICATION FLOW
@@ -161,4 +202,4 @@ function setupVerificationForm(user) {
             }
         }, 1500);
     };
-    }
+}
