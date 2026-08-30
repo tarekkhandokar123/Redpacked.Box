@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Channel Admin Panel - Red Packet</title>
+    <!-- Telegram WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="partner.css">
+</head>
+<body>
+    <!-- Top Toast Notification -->
+    <div id="toast-container"></div>
+
+    <!-- Splash Screen Animation -->
+    <div id="splash-screen">
+        <div class="admin-anim">🛡️</div>
+        <div class="loading-text">Loading Admin Portal...</div>
+    </div>
+
+    <!-- Main Admin App Container -->
+    <div id="admin-container" style="display: none;">
+        
+        <!-- Navigation Header -->
+        <header>
+            <div class="admin-profile-mini" onclick="Router.switchView('profile-view')">
+                <img id="header-avatar" src="default-avatar.png" alt="Admin">
+                <span id="header-name">Admin</span>
+            </div>
+            <div class="nav-links">
+                <button onclick="Router.switchView('dashboard-view')">🏠 Dashboard</button>
+                <button onclick="Router.switchView('create-view')">➕ Publish</button>
+            </div>
+        </header>
+
+        <!-- Dynamic Views Container (Lazy Loaded) -->
+        <main id="main-content">
+            
+            <!-- VIEW 1: First-time Channel Verification -->
+            <section id="verification-view" class="view-section" style="display: none;">
+                <h2>Channel Verification</h2>
+                <p class="subtitle">You must be an administrator of the channel to publish Red Packets.</p>
+                <form id="verify-form">
+                    <div class="form-group">
+                        <label>Channel Name:</label>
+                        <input type="text" id="chan-name" placeholder="e.g. Crypto Signals VIP" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Channel Link:</label>
+                        <input type="url" id="chan-link" placeholder="https://t.me/yourchannel" required>
+                    </div>
+                    <button type="submit" class="primary-btn">Verify & Create Profile</button>
+                </form>
+            </section>
+
+            <!-- VIEW 2: Admin Dashboard -->
+            <section id="dashboard-view" class="view-section" style="display: none;">
+                <div class="channel-banner">
+                    📢 <span id="dash-chan-name">Channel Name</span>
+                    <span class="status-badge">🟢 Verified Admin</span>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Total Packets</h3>
+                        <p id="stat-total-packets">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Opens</h3>
+                        <p id="stat-total-opens">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Earnings</h3>
+                        <p id="stat-total-earnings">$0.000</p>
+                    </div>
+                </div>
+
+                <div class="action-banner">
+                    <button class="primary-btn" onclick="Router.switchView('create-view')">➕ Publish New Red Packet</button>
+                </div>
+
+                <div class="packets-list-container">
+                    <h3>Active & History Red Packets</h3>
+                    <div id="admin-packets-list">
+                        <!-- Dynamic list items will load here -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW 3: Create Red Packet Form -->
+            <section id="create-view" class="view-section" style="display: none;">
+                <h2>Create Red Packet</h2>
+                <div id="cooldown-timer-box" class="cooldown-box" style="display: none;">
+                    ⏱️ Next Red Packet available in: <span id="cooldown-time">42:15</span>
+                </div>
+                <form id="create-packet-form">
+                    <div class="form-group">
+                        <label>1️⃣ Token Name:</label>
+                        <input type="text" id="token-name" placeholder="USDT" value="USDT" required>
+                    </div>
+                    <div class="form-group">
+                        <label>2️⃣ Amount per User:</label>
+                        <input type="text" id="token-amount" placeholder="e.g. 100 USDT" required>
+                    </div>
+                    <div class="form-group">
+                        <label>3️⃣ Open Limit (Users):</label>
+                        <input type="number" id="open-limit" placeholder="e.g. 500" required>
+                    </div>
+                    <div class="form-group">
+                        <label>4️⃣ Red Packet Link (Binance Only):</label>
+                        <input type="url" id="binance-link" placeholder="https://s.binance.com/..." required>
+                    </div>
+                    <button type="submit" id="publish-submit-btn" class="primary-btn">Publish Red Packet</button>
+                </form>
+
+                <!-- Success Link Box (Hidden initially) -->
+                <div id="success-link-box" class="success-box" style="display: none;">
+                    <h3>🎁 Your Red Packet is Live!</h3>
+                    <p class="share-note-text">🔥 Exclusive Crypto Drop! Claim your free USDT Red Packet now before it expires. Fast fingers only! 👇</p>
+                    <div class="link-output-group">
+                        <input type="text" id="generated-link" readonly>
+                        <button type="button" onclick="Dashboard_Module.copyLink()">📋 Copy Link</button>
+                    </div>
+                    <button type="button" class="share-tg-btn" onclick="Dashboard_Module.shareToTelegram()">📤 Share to Telegram Channel</button>
+                </div>
+            </section>
+
+            <!-- VIEW 4: Profile & Withdraw Page -->
+            <section id="profile-view" class="view-section" style="display: none;">
+                <div class="profile-header-card">
+                    <img id="prof-avatar" src="default-avatar.png" alt="Profile">
+                    <h3 id="prof-name">Admin Name</h3>
+                    <p id="prof-username">@username</p>
+                </div>
+
+                <!-- Accordion / Tabs Menu -->
+                <div class="profile-tabs">
+                    <button class="tab-btn active" onclick="Withdraw_Module.switchTab('income-tab')">💰 Income</button>
+                    <button class="tab-btn" onclick="Withdraw_Module.switchTab('stats-tab')">📊 Statistics</button>
+                    <button class="tab-btn" onclick="Withdraw_Module.switchTab('withdraw-tab')">💳 Withdraw</button>
+                </div>
+
+                <!-- Tab 1: Income (Default Open) -->
+                <div id="income-tab" class="tab-content">
+                    <div class="balance-card">
+                        <h4>Available Balance</h4>
+                        <p id="bal-available">$0.000 USDT</p>
+                    </div>
+                    <div class="balance-card hold-card">
+                        <h4>⏳ Holding Balance (5-Day Hold)</h4>
+                        <p id="bal-holding">$0.000 USDT</p>
+                        <small>Unlocks automatically after 5 days.</small>
+                    </div>
+                    <div class="balance-card">
+                        <h4>Withdrawable Balance</h4>
+                        <p id="bal-withdrawable">$0.000 USDT</p>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Statistics -->
+                <div id="stats-tab" class="tab-content" style="display: none;">
+                    <div class="stat-row">
+                        <span>Total Channel Posts:</span>
+                        <strong id="prof-total-posts">0</strong>
+                    </div>
+                    <div class="stat-row">
+                        <span>Total Users Claimed:</span>
+                        <strong id="prof-total-claimed">0</strong>
+                    </div>
+                </div>
+
+                <!-- Tab 3: Withdraw -->
+                <div id="withdraw-tab" class="tab-content" style="display: none;">
+                    <form id="withdraw-form">
+                        <div class="form-group">
+                            <label>Binance UID:</label>
+                            <input type="text" id="binance-uid" placeholder="Enter your Binance UID" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Amount (USDT):</label>
+                            <input type="number" step="0.01" id="withdraw-amount" placeholder="Min $1.00" required>
+                        </div>
+                        <button type="submit" class="primary-btn">Withdraw Request</button>
+                    </form>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Footer -->
+        <footer>
+           
+            <div class="footer-item">🆘 <strong>Support:</strong> @Onlineadsofficial</div>
+            <div class="footer-item">🚀 <strong>Sponsored by:</strong> <a href="https://t.me/DevTixoLab" target="_blank">DevTixoLab</a></div>
+        </footer>
+    </div>
+
+    <!-- Withdrawal Confirmation Modal -->
+    <div id="withdraw-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>Confirm Withdrawal</h3>
+            <p>Requested Amount: <span id="modal-req-amt">0</span> USDT</p>
+            <p>Platform Fee (10%): -<span id="modal-fee-amt">0</span> USDT</p>
+            <hr>
+            <p class="net-payout">You Will Receive: <strong id="modal-net-amt">0</strong> USDT</p>
+            <div class="modal-buttons">
+                <button onclick="Withdraw_Module.confirmWithdraw()" class="primary-btn">Submit Request</button>
+                <button onclick="Withdraw_Module.closeModal()" class="cancel-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modular Script Imports -->
+    <script type="module" src="js/partner.js"></script>
+    <script type="module" src="js/dashboard.js"></script>
+    <script type="module" src="js/withdraw.js"></script>
+</body>
+                  </html>
