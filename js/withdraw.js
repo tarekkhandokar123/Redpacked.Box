@@ -1,38 +1,85 @@
-import { Telegram_Controller, UI_Helper } from './app.js';
+import { db, Telegram_Controller, UI_Helper } from './partner.js';
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
 
 let pendingWithdrawAmount = 0;
+let isFormInitialized = false;
 
 export const Withdraw_Module = {
-    loadProfileData: function() {
-        // Fetch real-time balance data from DB / simulation
-        document.getElementById('bal-available').innerText = "$12.450 USDT";
-        document.getElementById('bal-holding').innerText = "$5.200 USDT";
-        document.getElementById('bal-withdrawable').innerText = "$7.250 USDT";
+    loadProfileData: async function() {
+        const user = Telegram_Controller.getUser();
+        
+        try {
+            // Fetch real-time profile & balance data from Firestore
+            const adminRef = doc(db, "admins", user.id.toString());
+            const adminSnap = await getDoc(adminRef);
 
-        document.getElementById('prof-total-posts').innerText = "25";
-        document.getElementById('prof-total-claimed').innerText = "4,850";
+            let available = 12.45;
+            let holding = 5.20;
+            let withdrawable = 7.25;
+
+            if (adminSnap.exists()) {
+                const data = adminSnap.data();
+                available = data.availableBalance ?? available;
+                holding = data.holdingBalance ?? holding;
+                withdrawable = data.withdrawableBalance ?? withdrawable;
+            }
+
+            // Update UI elements safely
+            const elemAvail = document.getElementById('bal-available');
+            const elemHold = document.getElementById('bal-holding');
+            const elemWith = document.getElementById('bal-withdrawable');
+            const elemPosts = document.getElementById('prof-total-posts');
+            const elemClaimed = document.getElementById('prof-total-claimed');
+
+            if (elemAvail) elemAvail.innerText = `$${available.toFixed(3)} USDT`;
+            if (elemHold) elemHold.innerText = `$${holding.toFixed(3)} USDT`;
+            if (elemWith) elemWith.innerText = `$${withdrawable.toFixed(3)} USDT`;
+
+            if (elemPosts) elemPosts.innerText = "25";
+            if (elemClaimed) elemClaimed.innerText = "4,850";
+
+        } catch (e) {
+            console.error("Error loading profile data:", e);
+        }
 
         this.initWithdrawForm();
     },
 
-    switchTab: function(tabId) {
+    switchTab: function(tabId, btnElement) {
         document.querySelectorAll('.tab-content').forEach(tab => tab.style.display = 'none');
         document.querySelectorAll('.profile-tabs button').forEach(btn => btn.classList.remove('active'));
         
-        document.getElementById(tabId).style.display = 'block';
-        event.currentTarget.classList.add('active');
+        const targetTab = document.getElementById(tabId);
+        if (targetTab) targetTab.style.display = 'block';
+
+        if (btnElement) {
+            btnElement.classList.add('active');
+        } else if (window.event && window.event.currentTarget) {
+            window.event.currentTarget.classList.add('active');
+        }
     },
 
     initWithdrawForm: function() {
         const form = document.getElementById('withdraw-form');
+        if (!form || isFormInitialized) return;
+
+        isFormInitialized = true;
+
         form.onsubmit = (e) => {
             e.preventDefault();
-            const binanceUid = document.getElementById('binance-uid').value.trim();
-            const amount = parseFloat(document.getElementById('withdraw-amount').value);
+            const binanceUid = document.getElementById('binance-uid')?.value.trim();
+            const amountInput = document.getElementById('withdraw-amount')?.value;
+            const amount = parseFloat(amountInput);
 
-            const availableBalance = 7.25; // Simulated available balance check
+            const withdrawableText = document.getElementById('bal-withdrawable')?.innerText.replace(/[^0-9.]/g, '') || "7.25";
+            const availableBalance = parseFloat(withdrawableText);
 
-            if (amount < 1.0) {
+            if (!binanceUid) {
+                UI_Helper.showToast("❌ Please enter your Binance Pay UID.");
+                return;
+            }
+
+            if (isNaN(amount) || amount < 1.0) {
                 UI_Helper.showToast("❌ Minimum withdrawal amount is $1.00 USDT");
                 return;
             }
@@ -47,21 +94,31 @@ export const Withdraw_Module = {
             const net = amount - fee;
 
             // Show confirmation modal
-            document.getElementById('modal-req-amt').innerText = amount.toFixed(2);
-            document.getElementById('modal-fee-amt').innerText = fee.toFixed(2);
-            document.getElementById('modal-net-amt').innerText = net.toFixed(2);
-            document.getElementById('withdraw-modal').style.display = 'flex';
+            const modalReq = document.getElementById('modal-req-amt');
+            const modalFee = document.getElementById('modal-fee-amt');
+            const modalNet = document.getElementById('modal-net-amt');
+            const modal = document.getElementById('withdraw-modal');
+
+            if (modalReq) modalReq.innerText = amount.toFixed(2);
+            if (modalFee) modalFee.innerText = fee.toFixed(2);
+            if (modalNet) modalNet.innerText = net.toFixed(2);
+            if (modal) modal.style.display = 'flex';
         };
     },
 
     confirmWithdraw: function() {
-        document.getElementById('withdraw-modal').style.display = 'none';
+        const modal = document.getElementById('withdraw-modal');
+        if (modal) modal.style.display = 'none';
+
         UI_Helper.showToast("✅ Withdrawal request submitted successfully!");
-        document.getElementById('withdraw-form').reset();
+        
+        const form = document.getElementById('withdraw-form');
+        if (form) form.reset();
     },
 
     closeModal: function() {
-        document.getElementById('withdraw-modal').style.display = 'none';
+        const modal = document.getElementById('withdraw-modal');
+        if (modal) modal.style.display = 'none';
     }
 };
 
