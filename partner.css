@@ -30,7 +30,7 @@ body {
     background-color: var(--dark-bg); 
     color: var(--text-light); 
     overflow-x: hidden; 
-    padding-bottom: 110px; /* বটম বার ও ফুটারের জায়গা নিশ্চিত করতে */
+    padding-bottom: 120px; /* বটম বার ও ফুটারের জায়গা নিশ্চিত করতে */
 }
 
 /* Toast Notification */
@@ -135,10 +135,55 @@ main { padding: 20px; }
 .modal-buttons { display: flex; gap: 10px; }
 .cancel-btn { flex: 1; background: #333; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; }
 
-/* Footer */
-footer { padding: 8px; font-size: 11px; background: #161616; text-align: center; border-top: 1px solid #222; margin-bottom: 60px; }
-.footer-item { margin: 2px 0; text-align: center; }
-.footer-item a { color: var(--gold); text-decoration: none; }
+/* App Footer Section (Support & Sponsor Style) */
+.app-footer-section {
+    padding: 15px 20px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 60px; /* Bottom Nav এর যাতে ঢেকে না যায় */
+}
+
+.sponsor-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+    background: rgba(255, 215, 0, 0.05);
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 215, 0, 0.15);
+}
+
+.sponsor-link {
+    color: var(--gold);
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.support-btn {
+    width: 100%;
+    background: rgba(229, 57, 53, 0.12);
+    color: #ff6b6b;
+    border: 1px solid rgba(229, 57, 53, 0.3);
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: bold;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.support-btn:active {
+    transform: scale(0.98);
+    background: rgba(229, 57, 53, 0.25);
+}
 
 /* ২. নতুন আলাদা বটম নেভিগেশন বার (Bottom Navigation Bar) */
 .bottom-nav {
@@ -186,4 +231,4 @@ footer { padding: 8px; font-size: 11px; background: #161616; text-align: center;
 
 .bottom-nav-item.active svg {
     stroke: var(--gold);
-            }
+                  }
