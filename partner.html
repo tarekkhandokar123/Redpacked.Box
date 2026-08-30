@@ -14,7 +14,13 @@
 
     <!-- Splash Screen Animation -->
     <div id="splash-screen">
-        <div class="admin-anim">🛡️</div>
+        <div class="admin-anim">
+            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#FFD700" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                <path d="M12 8v4"/>
+                <path d="M12 16h.01"/>
+            </svg>
+        </div>
         <div class="loading-text">Loading Admin Portal...</div>
     </div>
 
@@ -28,8 +34,14 @@
                 <span id="header-name">Admin</span>
             </div>
             <div class="nav-links">
-                <button onclick="Router.switchView('dashboard-view')">🏠 Dashboard</button>
-                <button onclick="Router.switchView('create-view')">➕ Publish</button>
+                <button onclick="Router.switchView('dashboard-view')" class="nav-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    Dashboard
+                </button>
+                <button onclick="Router.switchView('create-view')" class="nav-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Publish
+                </button>
             </div>
         </header>
 
@@ -49,15 +61,24 @@
                         <label>Channel Link:</label>
                         <input type="url" id="chan-link" placeholder="https://t.me/yourchannel" required>
                     </div>
-                    <button type="submit" class="primary-btn">Verify & Create Profile</button>
+                    <button type="submit" class="primary-btn">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        Verify & Create Profile
+                    </button>
                 </form>
             </section>
 
             <!-- VIEW 2: Admin Dashboard -->
             <section id="dashboard-view" class="view-section" style="display: none;">
                 <div class="channel-banner">
-                    📢 <span id="dash-chan-name">Channel Name</span>
-                    <span class="status-badge">🟢 Verified Admin</span>
+                    <div class="banner-left">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFD700" stroke-width="2"><path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8 2a2 2 0 0 1-4 0"/></svg>
+                        <span id="dash-chan-name">Channel Name</span>
+                    </div>
+                    <span class="status-badge">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="#4CAF50"><circle cx="12" cy="12" r="10"/></svg>
+                        Verified Admin
+                    </span>
                 </div>
 
                 <div class="stats-grid">
@@ -76,7 +97,10 @@
                 </div>
 
                 <div class="action-banner">
-                    <button class="primary-btn" onclick="Router.switchView('create-view')">➕ Publish New Red Packet</button>
+                    <button class="primary-btn" onclick="Router.switchView('create-view')">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Publish New Red Packet
+                    </button>
                 </div>
 
                 <div class="packets-list-container">
@@ -91,37 +115,50 @@
             <section id="create-view" class="view-section" style="display: none;">
                 <h2>Create Red Packet</h2>
                 <div id="cooldown-timer-box" class="cooldown-box" style="display: none;">
-                    ⏱️ Next Red Packet available in: <span id="cooldown-time">42:15</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    Next Red Packet available in: <span id="cooldown-time">42:15</span>
                 </div>
                 <form id="create-packet-form">
                     <div class="form-group">
-                        <label>1️⃣ Token Name:</label>
+                        <label>1. Token Name:</label>
                         <input type="text" id="token-name" placeholder="USDT" value="USDT" required>
                     </div>
                     <div class="form-group">
-                        <label>2️⃣ Amount per User:</label>
+                        <label>2. Amount per User:</label>
                         <input type="text" id="token-amount" placeholder="e.g. 100 USDT" required>
                     </div>
                     <div class="form-group">
-                        <label>3️⃣ Open Limit (Users):</label>
+                        <label>3. Open Limit (Users):</label>
                         <input type="number" id="open-limit" placeholder="e.g. 500" required>
                     </div>
                     <div class="form-group">
-                        <label>4️⃣ Red Packet Link (Binance Only):</label>
+                        <label>4. Red Packet Link (Binance Only):</label>
                         <input type="url" id="binance-link" placeholder="https://s.binance.com/..." required>
                     </div>
-                    <button type="submit" id="publish-submit-btn" class="primary-btn">Publish Red Packet</button>
+                    <button type="submit" id="publish-submit-btn" class="primary-btn">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                        Publish Red Packet
+                    </button>
                 </form>
 
                 <!-- Success Link Box (Hidden initially) -->
                 <div id="success-link-box" class="success-box" style="display: none;">
-                    <h3>🎁 Your Red Packet is Live!</h3>
+                    <h3>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFD700" stroke-width="2"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+                        Your Red Packet is Live!
+                    </h3>
                     <p class="share-note-text">🔥 Exclusive Crypto Drop! Claim your free USDT Red Packet now before it expires. Fast fingers only! 👇</p>
                     <div class="link-output-group">
                         <input type="text" id="generated-link" readonly>
-                        <button type="button" onclick="Dashboard_Module.copyLink()">📋 Copy Link</button>
+                        <button type="button" onclick="Dashboard_Module.copyLink()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                            Copy Link
+                        </button>
                     </div>
-                    <button type="button" class="share-tg-btn" onclick="Dashboard_Module.shareToTelegram()">📤 Share to Telegram Channel</button>
+                    <button type="button" class="share-tg-btn" onclick="Dashboard_Module.shareToTelegram()">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                        Share to Telegram Channel
+                    </button>
                 </div>
             </section>
 
@@ -135,9 +172,9 @@
 
                 <!-- Accordion / Tabs Menu -->
                 <div class="profile-tabs">
-                    <button class="tab-btn active" onclick="Withdraw_Module.switchTab('income-tab')">💰 Income</button>
-                    <button class="tab-btn" onclick="Withdraw_Module.switchTab('stats-tab')">📊 Statistics</button>
-                    <button class="tab-btn" onclick="Withdraw_Module.switchTab('withdraw-tab')">💳 Withdraw</button>
+                    <button class="tab-btn active" onclick="Withdraw_Module.switchTab('income-tab')">Income</button>
+                    <button class="tab-btn" onclick="Withdraw_Module.switchTab('stats-tab')">Statistics</button>
+                    <button class="tab-btn" onclick="Withdraw_Module.switchTab('withdraw-tab')">Withdraw</button>
                 </div>
 
                 <!-- Tab 1: Income (Default Open) -->
@@ -147,7 +184,7 @@
                         <p id="bal-available">$0.000 USDT</p>
                     </div>
                     <div class="balance-card hold-card">
-                        <h4>⏳ Holding Balance (5-Day Hold)</h4>
+                        <h4>Holding Balance (5-Day Hold)</h4>
                         <p id="bal-holding">$0.000 USDT</p>
                         <small>Unlocks automatically after 5 days.</small>
                     </div>
@@ -189,7 +226,6 @@
 
         <!-- Footer -->
         <footer>
-           
             <div class="footer-item">🆘 <strong>Support:</strong> @Onlineadsofficial</div>
             <div class="footer-item">🚀 <strong>Sponsored by:</strong> <a href="https://t.me/DevTixoLab" target="_blank">DevTixoLab</a></div>
         </footer>
@@ -215,4 +251,4 @@
     <script type="module" src="js/dashboard.js"></script>
     <script type="module" src="js/withdraw.js"></script>
 </body>
-                  </html>
+</html>
