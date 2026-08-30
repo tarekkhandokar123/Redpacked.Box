@@ -58,10 +58,10 @@ export const UI_Helper = {
 window.UI_Helper = UI_Helper;
 
 // ==========================================
-// 3. LAZY ROUTING SYSTEM & BACK BUTTON
+// 3. LAZY ROUTING SYSTEM & BOTTOM NAV / BACK BUTTON
 // ==========================================
 export const Router = {
-    historyStack: [], // keeps track of page navigation
+    historyStack: [], 
     
     switchView: function(viewId, pushHistory = true) {
         const tg = window.Telegram?.WebApp;
@@ -77,24 +77,32 @@ export const Router = {
 
             // Add to history stack to remember navigation path
             if (pushHistory) {
-                // Prevent duplicate consecutive entries
                 if (this.historyStack.length === 0 || this.historyStack[this.historyStack.length - 1] !== viewId) {
                     this.historyStack.push(viewId);
                 }
             }
 
+            // Bottom Navigation Active Class Update
+            document.querySelectorAll('.bottom-nav-item').forEach(btn => btn.classList.remove('active'));
+            if (viewId === 'dashboard-view') {
+                document.querySelector('.bottom-nav-item:nth-child(1)')?.classList.add('active');
+            } else if (viewId === 'create-view') {
+                document.querySelector('.bottom-nav-item:nth-child(2)')?.classList.add('active');
+            } else if (viewId === 'profile-view') {
+                document.querySelector('.bottom-nav-item:nth-child(3)')?.classList.add('active');
+            }
+
             // Telegram Native BackButton Display Logic
             if (tg && tg.BackButton) {
-                // Only hide back button on root pages (Dashboard & Verification)
                 if (viewId === 'dashboard-view' || viewId === 'verification-view') {
                     tg.BackButton.hide();
-                    this.historyStack = [viewId]; // Reset stack for root pages
+                    this.historyStack = [viewId];
                 } else {
                     tg.BackButton.show();
                 }
             }
 
-            // Lazy load corresponding view controller data
+            // Lazy Load Data
             if (viewId === 'dashboard-view' && window.Dashboard_Module) {
                 window.Dashboard_Module.loadDashboardData();
             } else if (viewId === 'profile-view' && window.Withdraw_Module) {
@@ -107,9 +115,9 @@ export const Router = {
 
     goBack: function() {
         if (this.historyStack.length > 1) {
-            this.historyStack.pop(); // Remove current view from stack
-            const previousView = this.historyStack[this.historyStack.length - 1]; // Get last view
-            this.switchView(previousView, false); // false prevents pushing again
+            this.historyStack.pop();
+            const previousView = this.historyStack[this.historyStack.length - 1];
+            this.switchView(previousView, false);
         }
     }
 };
