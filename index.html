@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Premium Red Packet</title>
+    <!-- Telegram WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Adsgram SDK -->
+    <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Top Notification / Toast -->
+    <div id="toast-container"></div>
+
+    <!-- Splash Screen Animation -->
+    <div id="splash-screen">
+        <div class="gift-box-anim">🎁</div>
+        <div class="loading-text">Unwrapping...</div>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="app-container" style="display: none;">
+        
+        <!-- Header -->
+        <header>
+            <div class="user-profile" id="user-profile">
+                <img id="user-avatar" src="default-avatar.png" alt="User">
+                <span id="user-name">Loading...</span>
+            </div>
+            <button class="publish-btn" onclick="UI_Controller.openAdminApp()">
+                ➕ Publish Red Packet
+                <small>Create via Binance</small>
+            </button>
+        </header>
+
+        <!-- Dynamic View: Specific Packet OR List of Packets -->
+        <main id="main-content">
+            <!-- View: Single Red Packet -->
+            <section id="view-single" style="display: none;">
+                <div class="channel-info">
+                    📢 <span id="rp-channel-name">Channel Name</span>
+                </div>
+                <div class="token-info">
+                    💰 <span id="rp-token-info">USDT — 100 Accounts</span>
+                </div>
+
+                <div class="red-packet-container">
+                    <div class="gift-box" id="gift-box-btn">🎁</div>
+                    <button class="open-btn" id="open-btn">OPEN RED PACKET</button>
+                    
+                    <div class="limit-counter">
+                        👥 Opened: <span id="rp-opened">245</span> / <span id="rp-total">500</span>
+                    </div>
+                </div>
+
+                <!-- Share Button (Hidden initially) -->
+                <button class="share-btn" id="share-btn" style="display: none;">
+                    📤 Share to Friends
+                </button>
+            </section>
+
+            <!-- View: Packet List (If opened directly without specific link) -->
+            <section id="view-list" style="display: none;">
+                <h2>🔥 Active Red Packets</h2>
+                <p class="cooldown-note">Note: You can open one packet every 5 minutes.</p>
+                <div id="packet-list-container">
+                    <!-- Dynamic packet items will load here -->
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer / Events & Sponsors -->
+        <footer>
+            <div class="footer-item">🎉 <strong>Event:</strong> Super Drop Week!</div>
+            <div class="footer-item">🆘 <strong>Support:</strong> @Onlineadsofficial</div>
+            <div class="footer-item">🚀 <strong>Sponsored by:</strong> <a href="https://t.me/DevTixoLab" target="_blank">DevTixoLab</a></div>
+        </footer>
+    </div>
+
+    <!-- Main JavaScript File -->
+    <script type="module" src="app.js"></script>
+</body>
+</html>

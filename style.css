@@ -1,0 +1,85 @@
+:root {
+    --primary-red: #E53935;
+    --dark-bg: #121212;
+    --card-bg: #1E1E1E;
+    --gold: #FFD700;
+    --text-light: #FFFFFF;
+    --text-muted: #AAAAAA;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
+body {
+    background-color: var(--dark-bg);
+    color: var(--text-light);
+    overflow-x: hidden;
+}
+
+/* Toast Messages */
+#toast-container {
+    position: fixed; top: -100px; left: 50%; transform: translateX(-50%);
+    background: var(--gold); color: var(--dark-bg);
+    padding: 12px 24px; border-radius: 8px; font-weight: bold;
+    z-index: 9999; transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+}
+#toast-container.show { top: 20px; }
+
+/* Splash Screen */
+#splash-screen {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background: var(--dark-bg); display: flex; flex-direction: column;
+    justify-content: center; align-items: center; z-index: 1000;
+}
+.gift-box-anim { font-size: 80px; animation: bounce 1.5s infinite; }
+.loading-text { margin-top: 15px; color: var(--gold); font-weight: bold; letter-spacing: 1px; }
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+}
+
+/* Header Elements */
+header { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: var(--card-bg); border-bottom: 2px solid var(--primary-red); }
+.user-profile { display: flex; align-items: center; gap: 10px; }
+.user-profile img { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--gold); }
+.user-profile span { font-weight: bold; }
+
+.publish-btn {
+    background: var(--primary-red); color: white; border: none;
+    padding: 8px 12px; border-radius: 8px; font-weight: bold; text-align: center;
+    cursor: pointer; display: flex; flex-direction: column; align-items: center;
+}
+.publish-btn small { font-size: 10px; opacity: 0.8; margin-top: 2px; }
+
+/* Main Content */
+main { padding: 20px; text-align: center; }
+.channel-info { font-size: 18px; font-weight: bold; margin-bottom: 10px; color: var(--gold); }
+.token-info { font-size: 16px; margin-bottom: 30px; background: rgba(255, 215, 0, 0.1); display: inline-block; padding: 5px 15px; border-radius: 15px; }
+
+/* Gift Box & Button */
+.red-packet-container { margin: 40px 0; }
+.gift-box { font-size: 120px; cursor: pointer; transition: transform 0.3s; margin-bottom: 20px; filter: drop-shadow(0 0 20px rgba(229, 57, 53, 0.5)); }
+.gift-box:hover, .gift-box.shake { animation: shake 0.5s; }
+
+@keyframes shake {
+    0% { transform: translate(1px, 1px) rotate(0deg); }
+    20% { transform: translate(-3px, 0px) rotate(5deg); }
+    40% { transform: translate(1px, -1px) rotate(-5deg); }
+    60% { transform: translate(-3px, 1px) rotate(5deg); }
+    80% { transform: translate(1px, -1px) rotate(-5deg); }
+    100% { transform: translate(1px, 1px) rotate(0deg); }
+}
+
+.open-btn {
+    background: linear-gradient(45deg, var(--gold), #ffb300); border: none;
+    padding: 15px 40px; font-size: 18px; font-weight: bold; border-radius: 25px;
+    color: var(--dark-bg); cursor: pointer; box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+}
+.limit-counter { margin-top: 20px; font-size: 14px; color: var(--text-muted); font-weight: bold; }
+.share-btn { margin-top: 20px; background: #0088cc; color: white; padding: 10px 30px; border-radius: 20px; border: none; font-weight: bold; font-size: 16px; }
+
+/* Footer */
+footer { position: fixed; bottom: 0; width: 100%; background: var(--card-bg); padding: 10px; font-size: 12px; border-top: 1px solid #333; }
+.footer-item { margin: 5px 0; text-align: center; }
+.footer-item a { color: var(--gold); text-decoration: none; }
