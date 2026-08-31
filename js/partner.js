@@ -1,7 +1,13 @@
 // Import Firebase SDKs
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-analytics.js";
-import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+import { 
+    getFirestore, 
+    doc, 
+    getDoc, 
+    setDoc, 
+    serverTimestamp 
+} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBObsWUTRpIESXNW_wa2MvoblEmJc27TaQ",
@@ -21,20 +27,22 @@ export const db = getFirestore(app);
 // 1. TELEGRAM & USER SESSION CONTROLLER
 // ==========================================
 export const Telegram_Controller = {
-    tg: window.Telegram.WebApp,
+    tg: window.Telegram?.WebApp,
     getUser: function() {
-        this.tg.expand();
-        const user = this.tg.initDataUnsafe?.user;
-        if (user) {
-            return {
-                id: user.id,
-                username: user.username || 'AdminUser',
-                name: `${user.first_name || ''} ${user.last_name || ''}`.trim(),
-                photoUrl: user.photo_url || 'default-avatar.png'
-            };
+        if (this.tg) {
+            this.tg.expand();
+            const user = this.tg.initDataUnsafe?.user;
+            if (user) {
+                return {
+                    id: user.id,
+                    username: user.username || 'AdminUser',
+                    name: `${user.first_name || ''} ${user.last_name || ''}`.trim(),
+                    photoUrl: user.photo_url || 'default-avatar.png'
+                };
+            }
         }
         // Fallback for testing outside Telegram environment
-        return { id: "test_admin_id_123", username: "DemoAdmin", name: "Demo Channel Admin", photoUrl: "" };
+        return { id: "test_admin_id_123", username: "DemoAdmin", name: "Demo Channel Admin", photoUrl: "default-avatar.png" };
     }
 };
 
@@ -44,14 +52,20 @@ export const Telegram_Controller = {
 export const UI_Helper = {
     showToast: function(message) {
         const toast = document.getElementById('toast-container');
-        toast.innerText = message;
-        toast.classList.add('show');
-        setTimeout(() => toast.classList.remove('show'), 3500);
+        if (toast) {
+            toast.innerText = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3500);
+        } else {
+            alert(message);
+        }
     },
     hideSplash: function() {
         setTimeout(() => {
-            document.getElementById('splash-screen').style.display = 'none';
-            document.getElementById('admin-container').style.display = 'block';
+            const splash = document.getElementById('splash-screen');
+            const adminContainer = document.getElementById('admin-container');
+            if (splash) splash.style.display = 'none';
+            if (adminContainer) adminContainer.style.display = 'block';
         }, 1200);
     }
 };
@@ -137,13 +151,19 @@ window.addEventListener('DOMContentLoaded', async () => {
     const user = Telegram_Controller.getUser();
     
     // Set Header/Profile metadata
-    document.getElementById('header-name').innerText = user.name;
+    const headerName = document.getElementById('header-name');
+    const profName = document.getElementById('prof-name');
+    const profUsername = document.getElementById('prof-username');
+    const headerAvatar = document.getElementById('header-avatar');
+    const profAvatar = document.getElementById('prof-avatar');
+
+    if (headerName) headerName.innerText = user.name;
+    if (profName) profName.innerText = user.name;
+    if (profUsername) profUsername.innerText = `@${user.username}`;
     if (user.photoUrl) {
-        document.getElementById('header-avatar').src = user.photoUrl;
-        document.getElementById('prof-avatar').src = user.photoUrl;
+        if (headerAvatar) headerAvatar.src = user.photoUrl;
+        if (profAvatar) profAvatar.src = user.photoUrl;
     }
-    document.getElementById('prof-name').innerText = user.name;
-    document.getElementById('prof-username').innerText = `@${user.username}`;
 
     // Check if Admin Profile already exists in Database
     try {
@@ -163,51 +183,83 @@ window.addEventListener('DOMContentLoaded', async () => {
         Router.switchView('dashboard-view'); // Fallback
     }
 
-    Telegram_Controller.tg.ready();
+    Telegram_Controller.tg?.ready();
     UI_Helper.hideSplash();
 });
 
 function setupVerificationForm(user) {
     const form = document.getElementById('verify-form');
+    if (!form) return;
+
     form.onsubmit = async (e) => {
         e.preventDefault();
-        const chanName = document.getElementById('chan-name').value.trim();
-        const chanLink = document.getElementById('chan-link').value.trim();
+        
+        const chanNameInput = document.getElementById('chan-name');
+        const chanLinkInput = document.getElementById('chan-link');
+        
+        let chanName = chanNameInput ? chanNameInput.value.trim() : '';
+        let chanLink = chanLinkInput ? chanLinkInput.value.trim() : '';
 
         if (!chanName || !chanLink) {
-            UI_Helper.showToast("Please enter both Channel Name and Link.");
+            UI_Helper.showToast("⚠️ Please enter both Channel Name/Username and Link.");
             return;
         }
 
-        UI_Helper.showToast("Verifying channel admin status via Telegram Bot API...");
+        // Format channel username with @ if missing
+        if (!chanName.startsWith('@') && !chanName.startsWith('-100')) {
+            chanName = `@${chanName}`;
+        }
 
-        // Simulated Backend verification (In production, backend checks Telegram getChatMember API)
-        setTimeout(async () => {
-            const isAdminVerified = true; // Set to false if API check fails
+        UI_Helper.showToast("🔍 Verifying channel admin status...");
 
-            if (isAdminVerified) {
-                try {
-                    // Create Admin Profile in Database ONLY after successful verification
-                    await setDoc(doc(db, "admins", user.id.toString()), {
-                        telegramUserId: user.id,
-                        username: user.username,
-                        name: user.name,
-                        channelName: chanName,
-                        channelLink: chanLink,
-                        createdAt: new Date(),
-                        availableBalance: 0,
-                        holdingBalance: 0,
-                        withdrawableBalance: 0
-                    });
+        try {
+            // Live backend verification call to Vercel API
+            const response = await fetch('https://redpacked.vercel.app/api/webhook', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'verify',
+                    channelId: chanName,
+                    userId: user.id.toString()
+                })
+            });
 
-                    UI_Helper.showToast("✅ Channel Verified Successfully!");
-                    Router.switchView('dashboard-view');
-                } catch (err) {
-                    UI_Helper.showToast("Error saving profile to database.");
-                }
+            const result = await response.json();
+
+            if (result.isVerified) {
+                const cleanDocId = chanName.replace('@', '').toLowerCase();
+
+                // 1. Save Admin Record in Firestore
+                await setDoc(doc(db, "admins", user.id.toString()), {
+                    telegramUserId: user.id.toString(),
+                    username: user.username,
+                    name: user.name,
+                    channelName: chanName,
+                    channelLink: chanLink,
+                    availableBalance: 0,
+                    holdingBalance: 0,
+                    withdrawableBalance: 0,
+                    createdAt: serverTimestamp()
+                }, { merge: true });
+
+                // 2. Save Channel Record in Firestore
+                await setDoc(doc(db, "channels", cleanDocId), {
+                    channelUsername: chanName,
+                    channelLink: chanLink,
+                    ownerTelegramId: user.id.toString(),
+                    userRole: result.role || "administrator",
+                    status: "active",
+                    createdAt: serverTimestamp()
+                }, { merge: true });
+
+                UI_Helper.showToast("🎉 Channel Verified & Profile Created!");
+                Router.switchView('dashboard-view');
             } else {
-                UI_Helper.showToast("❌ Channel verification failed. You must be an administrator.");
+                UI_Helper.showToast(result.message || "❌ Channel verification failed. Add bot as Admin!");
             }
-        }, 1500);
+        } catch (err) {
+            console.error("Verification connection error:", err);
+            UI_Helper.showToast("❌ Connection error during verification!");
+        }
     };
 }
