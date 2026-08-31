@@ -73,7 +73,7 @@
                 <div class="channel-banner">
                     <div class="banner-left">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFD700" stroke-width="2"><path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8 2a2 2 0 0 1-4 0"/></svg>
-                        <span id="dash-chan-name">Channel Name</span>
+                        <span id="dash-chan-name">Loading Channel...</span>
                     </div>
                     <span class="status-badge">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="#4CAF50"><circle cx="12" cy="12" r="10"/></svg>
@@ -92,7 +92,7 @@
                     </div>
                     <div class="stat-card">
                         <h3>Total Earnings</h3>
-                        <p id="stat-total-earnings">$0.000</p>
+                        <p id="stat-total-earnings">$0.000 USDT</p>
                     </div>
                 </div>
 
@@ -106,7 +106,7 @@
                 <div class="packets-list-container">
                     <h3>Active & History Red Packets</h3>
                     <div id="admin-packets-list">
-                        <!-- Dynamic list items will load here -->
+                        <!-- Dynamic list items will load here from Firestore -->
                     </div>
                 </div>
             </section>
@@ -116,12 +116,12 @@
                 <h2>Create Red Packet</h2>
                 <div id="cooldown-timer-box" class="cooldown-box" style="display: none;">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    Next Red Packet available in: <span id="cooldown-time">42:15</span>
+                    Next Red Packet available in: <span id="cooldown-time">00:00</span>
                 </div>
                 <form id="create-packet-form">
                     <div class="form-group">
                         <label>1. Token Name:</label>
-                        <input type="text" id="token-name" placeholder="USDT" value="USDT" required>
+                        <input type="text" id="token-name" placeholder="e.g. USDT" value="USDT" required>
                     </div>
                     <div class="form-group">
                         <label>2. Amount per User:</label>
@@ -137,7 +137,7 @@
                     </div>
                     <button type="submit" id="publish-submit-btn" class="primary-btn">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                        Publish Red Packet
+                        Verify & Publish Red Packet
                     </button>
                 </form>
 
@@ -166,8 +166,8 @@
             <section id="profile-view" class="view-section" style="display: none;">
                 <div class="profile-header-card">
                     <img id="prof-avatar" src="default-avatar.png" alt="Profile">
-                    <h3 id="prof-name">Admin Name</h3>
-                    <p id="prof-username">@username</p>
+                    <h3 id="prof-name">Admin</h3>
+                    <p id="prof-username">@admin</p>
                 </div>
 
                 <!-- Accordion / Tabs Menu -->
