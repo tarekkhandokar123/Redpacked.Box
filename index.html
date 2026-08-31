@@ -57,8 +57,8 @@
                     <span class="online-indicator"></span>
                 </div>
                 <div class="user-meta">
-                    <span id="user-name" class="user-display-name">Loading...</span>
-                    <span class="user-badge">Partner Admin</span>
+                    <span id="user-name" class="user-display-name">User</span>
+                    <span class="user-badge" id="user-role-badge">Member</span>
                 </div>
             </div>
 
@@ -69,7 +69,7 @@
                 </svg>
                 <div class="btn-text-group">
                     <span class="btn-main-text">Publish Packet</span>
-                    <small class="btn-sub-text">Create via Binance</small>
+                    <small class="btn-sub-text">Partner Panel</small>
                 </div>
             </button>
         </header>
@@ -87,7 +87,7 @@
                             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                             <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                         </svg>
-                        <span id="rp-channel-name">Channel Name</span>
+                        <span id="rp-channel-name">Loading...</span>
                     </div>
 
                     <!-- Token Info Badge -->
@@ -96,7 +96,7 @@
                             <circle cx="12" cy="12" r="10"></circle>
                             <path d="M12 6v12M15 9.5C15 8.1 13.7 7 12 7s-3 1.1-3 2.5 1.3 2.5 3 2.5 3 1.1 3 2.5-1.3 2.5-3 2.5-3-1.1-3-2.5"></path>
                         </svg>
-                        <span id="rp-token-info">USDT — 100 Accounts</span>
+                        <span id="rp-token-info">Loading...</span>
                     </div>
                 </div>
 
@@ -139,10 +139,10 @@
                             <span>Claim Progress</span>
                         </div>
                         <div class="counter-progress-bar">
-                            <div class="progress-fill" style="width: 49%;"></div>
+                            <div class="progress-fill" id="rp-progress-fill" style="width: 0%;"></div>
                         </div>
                         <div class="counter-numbers">
-                            Opened: <strong><span id="rp-opened">245</span></strong> / <span id="rp-total">500</span>
+                            Opened: <strong><span id="rp-opened">0</span></strong> / <span id="rp-total">0</span>
                         </div>
                     </div>
                 </div>
@@ -167,14 +167,6 @@
                         <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3z"></path>
                     </svg>
                     <h2>Active Red Packets</h2>
-                </div>
-
-                <div class="cooldown-banner">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFB300" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <polyline points="12 6 12 12 16 14"></polyline>
-                    </svg>
-                    <span>Note: You can open one packet every 5 minutes.</span>
                 </div>
 
                 <div id="packet-list-container" class="packets-grid">
