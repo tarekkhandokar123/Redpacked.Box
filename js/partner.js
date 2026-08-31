@@ -24,6 +24,19 @@ const analytics = getAnalytics(app);
 export const db = getFirestore(app);
 
 // ==========================================
+// HELPER: EXTRACT TELEGRAM USERNAME FROM STRING/URL
+// ==========================================
+function parseTelegramUsername(input) {
+    if (!input) return null;
+    const clean = input.trim();
+    if (clean.startsWith('-100')) return clean; // Channel ID support
+    
+    // Regex to extract username from t.me links or @username
+    const match = clean.match(/(?:https?:\/\/)?(?:t\.me\/|telegram\.me\/)?@?([a-zA-Z0-9_]{5,32})/i);
+    return match ? `@${match[1]}` : null;
+}
+
+// ==========================================
 // 1. TELEGRAM & USER SESSION CONTROLLER
 // ==========================================
 export const Telegram_Controller = {
@@ -41,7 +54,6 @@ export const Telegram_Controller = {
                 };
             }
         }
-        // Fallback for testing outside Telegram environment
         return { id: "test_admin_id_123", username: "DemoAdmin", name: "Demo Channel Admin", photoUrl: "default-avatar.png" };
     }
 };
@@ -80,7 +92,6 @@ export const Router = {
     switchView: function(viewId, pushHistory = true) {
         const tg = window.Telegram?.WebApp;
 
-        // Hide all views
         document.querySelectorAll('.view-section').forEach(section => {
             section.style.display = 'none';
         });
@@ -89,14 +100,12 @@ export const Router = {
         if (targetView) {
             targetView.style.display = 'block';
 
-            // Add to history stack to remember navigation path
             if (pushHistory) {
                 if (this.historyStack.length === 0 || this.historyStack[this.historyStack.length - 1] !== viewId) {
                     this.historyStack.push(viewId);
                 }
             }
 
-            // Bottom Navigation Active Class Update
             document.querySelectorAll('.bottom-nav-item').forEach(btn => btn.classList.remove('active'));
             if (viewId === 'dashboard-view') {
                 document.querySelector('.bottom-nav-item:nth-child(1)')?.classList.add('active');
@@ -106,7 +115,6 @@ export const Router = {
                 document.querySelector('.bottom-nav-item:nth-child(3)')?.classList.add('active');
             }
 
-            // Telegram Native BackButton Display Logic
             if (tg && tg.BackButton) {
                 if (viewId === 'dashboard-view' || viewId === 'verification-view') {
                     tg.BackButton.hide();
@@ -116,7 +124,6 @@ export const Router = {
                 }
             }
 
-            // Lazy Load Data
             if (viewId === 'dashboard-view' && window.Dashboard_Module) {
                 window.Dashboard_Module.loadDashboardData();
             } else if (viewId === 'profile-view' && window.Withdraw_Module) {
@@ -137,7 +144,6 @@ export const Router = {
 };
 window.Router = Router;
 
-// Handle Global Back Button Click Event exactly ONCE
 if (window.Telegram?.WebApp?.BackButton) {
     window.Telegram.WebApp.BackButton.onClick(() => {
         Router.goBack();
@@ -150,7 +156,6 @@ if (window.Telegram?.WebApp?.BackButton) {
 window.addEventListener('DOMContentLoaded', async () => {
     const user = Telegram_Controller.getUser();
     
-    // Set Header/Profile metadata
     const headerName = document.getElementById('header-name');
     const profName = document.getElementById('prof-name');
     const profUsername = document.getElementById('prof-username');
@@ -165,22 +170,19 @@ window.addEventListener('DOMContentLoaded', async () => {
         if (profAvatar) profAvatar.src = user.photoUrl;
     }
 
-    // Check if Admin Profile already exists in Database
     try {
         const adminRef = doc(db, "admins", user.id.toString());
         const adminSnap = await getDoc(adminRef);
 
         if (adminSnap.exists()) {
-            // Already verified, go directly to Dashboard
             Router.switchView('dashboard-view');
         } else {
-            // First time: Show Channel Verification View
             Router.switchView('verification-view');
             setupVerificationForm(user);
         }
     } catch (e) {
         console.error("Initialization error:", e);
-        Router.switchView('dashboard-view'); // Fallback
+        Router.switchView('dashboard-view');
     }
 
     Telegram_Controller.tg?.ready();
@@ -197,29 +199,31 @@ function setupVerificationForm(user) {
         const chanNameInput = document.getElementById('chan-name');
         const chanLinkInput = document.getElementById('chan-link');
         
-        let chanName = chanNameInput ? chanNameInput.value.trim() : '';
-        let chanLink = chanLinkInput ? chanLinkInput.value.trim() : '';
+        const rawChanName = chanNameInput ? chanNameInput.value.trim() : '';
+        const rawChanLink = chanLinkInput ? chanLinkInput.value.trim() : '';
 
-        if (!chanName || !chanLink) {
-            UI_Helper.showToast("⚠️ Please enter both Channel Name/Username and Link.");
+        if (!rawChanName || !rawChanLink) {
+            UI_Helper.showToast("⚠️ Please enter both Channel Name and Link.");
             return;
         }
 
-        // Format channel username with @ if missing
-        if (!chanName.startsWith('@') && !chanName.startsWith('-100')) {
-            chanName = `@${chanName}`;
+        // Smart Extraction: Extract valid @username from Link or Name input
+        const validChannelUsername = parseTelegramUsername(rawChanLink) || parseTelegramUsername(rawChanName);
+
+        if (!validChannelUsername) {
+            UI_Helper.showToast("⚠️ Invalid Channel Username or Link!");
+            return;
         }
 
         UI_Helper.showToast("🔍 Verifying channel admin status...");
 
         try {
-            // Live backend verification call to Vercel API
             const response = await fetch('https://redpacked.vercel.app/api/webhook', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     action: 'verify',
-                    channelId: chanName,
+                    channelId: validChannelUsername,
                     userId: user.id.toString()
                 })
             });
@@ -227,15 +231,16 @@ function setupVerificationForm(user) {
             const result = await response.json();
 
             if (result.isVerified) {
-                const cleanDocId = chanName.replace('@', '').toLowerCase();
+                const cleanDocId = validChannelUsername.replace('@', '').toLowerCase();
 
                 // 1. Save Admin Record in Firestore
                 await setDoc(doc(db, "admins", user.id.toString()), {
                     telegramUserId: user.id.toString(),
                     username: user.username,
                     name: user.name,
-                    channelName: chanName,
-                    channelLink: chanLink,
+                    channelName: rawChanName,
+                    channelUsername: validChannelUsername,
+                    channelLink: rawChanLink,
                     availableBalance: 0,
                     holdingBalance: 0,
                     withdrawableBalance: 0,
@@ -244,8 +249,9 @@ function setupVerificationForm(user) {
 
                 // 2. Save Channel Record in Firestore
                 await setDoc(doc(db, "channels", cleanDocId), {
-                    channelUsername: chanName,
-                    channelLink: chanLink,
+                    channelUsername: validChannelUsername,
+                    channelTitle: rawChanName,
+                    channelLink: rawChanLink,
                     ownerTelegramId: user.id.toString(),
                     userRole: result.role || "administrator",
                     status: "active",
