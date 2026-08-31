@@ -1,4 +1,20 @@
 export default async function handler(req, res) {
+    // ====================================================================
+    // 0. CORS HEADERS (Fixes "Failed to fetch" browser block)
+    // ====================================================================
+    res.setHeader('Access-Control-Allow-Credentials', true);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+    res.setHeader(
+        'Access-Control-Allow-Headers',
+        'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+    );
+
+    // Preflight OPTIONS Request Handle
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+
     if (req.method !== 'POST') {
         return res.status(200).send('🚀 Users Verification API & Webhook Active!');
     }
@@ -46,7 +62,14 @@ export default async function handler(req, res) {
         }
     };
 
-    const body = req.body || {};
+    let body = req.body || {};
+    if (typeof body === 'string') {
+        try {
+            body = JSON.parse(body);
+        } catch (e) {
+            body = {};
+        }
+    }
 
     // ====================================================================
     // ১. পার্টনার প্যানেল / ওয়েব অ্যাপ (Web App) থেকে সরাসরি ভেরিফিকেশন API
@@ -92,7 +115,7 @@ export default async function handler(req, res) {
     const { message } = body;
 
     if (message) {
-        // 🛑 গুরুত্বপূর্ণ: গ্রুপ, সুপারগ্রুপ বা চ্যানেলের সব মেসেজ ইগনোর করবে!
+        // 🛑 গ্রুপ, সুপারগ্রুপ বা চ্যানেলের মেসেজ ইগনোর করবে
         if (message.chat && message.chat.type !== 'private') {
             return res.status(200).json({ status: 'ignored_group_message' });
         }
