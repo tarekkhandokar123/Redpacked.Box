@@ -13,8 +13,8 @@ import {
     collection, 
     getDocs, 
     query, 
-    where, 
-    limit 
+    where,
+    serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -50,8 +50,7 @@ export const User_Controller = {
                 };
             }
         }
-        // Web Browser Preview / Fallback
-        return { id: "demo_12345", username: "DemoUser", fullName: "Demo Creator", photoUrl: "default-avatar.png" };
+        return { id: "guest_user", username: "Guest", fullName: "Guest User", photoUrl: "default-avatar.png" };
     }
 };
 
@@ -73,7 +72,7 @@ export const UI_Controller = {
             const appContainer = document.getElementById('app-container');
             if (splash) splash.style.display = 'none';
             if (appContainer) appContainer.style.display = 'block';
-        }, 1200);
+        }, 1000);
     },
 
     setupProfile: function(user) {
@@ -85,9 +84,9 @@ export const UI_Controller = {
     },
 
     openAdminApp: function() {
-        const adminUrl = "https://t.me/YourAdminBot?start=publish";
-        if (User_Controller.tg?.openTelegramLink) {
-            User_Controller.tg.openTelegramLink(adminUrl);
+        const adminUrl = "https://redpacked.vercel.app/partner.html";
+        if (User_Controller.tg?.openLink) {
+            User_Controller.tg.openLink(adminUrl);
         } else {
             window.location.href = adminUrl;
         }
@@ -96,31 +95,15 @@ export const UI_Controller = {
     updateProgressBar: function(opened, total) {
         const openedElem = document.getElementById('rp-opened');
         const totalElem = document.getElementById('rp-total');
-        const fillElem = document.querySelector('.progress-fill');
+        const fillElem = document.getElementById('rp-progress-fill') || document.querySelector('.progress-fill');
 
-        if (openedElem) openedElem.innerText = opened;
-        if (totalElem) totalElem.innerText = total;
+        if (openedElem) openedElem.innerText = opened.toLocaleString();
+        if (totalElem) totalElem.innerText = total.toLocaleString();
 
         if (fillElem && total > 0) {
-            const percentage = Math.min(100, Math.round((opened / total) * 100));
+            const percentage = Math.min(100, Math.floor((opened / total) * 100));
             fillElem.style.width = `${percentage}%`;
         }
-    },
-
-    showSuccessAnimation: function(rewardInfo) {
-        const giftBox = document.getElementById('gift-box-btn');
-        const shareBtn = document.getElementById('share-btn');
-        const openBtn = document.getElementById('open-btn');
-
-        if (giftBox) {
-            giftBox.style.transform = "scale(1.15)";
-            giftBox.classList.remove('interactive-bounce');
-        }
-
-        this.showToast(`🎉 Claimed! You won ${rewardInfo}`);
-
-        if (shareBtn) shareBtn.style.display = 'flex';
-        if (openBtn) openBtn.style.display = 'none';
     }
 };
 
@@ -133,8 +116,8 @@ export const Ads_Controller = {
     playAd: async function() {
         return new Promise((resolve, reject) => {
             if (!window.Adsgram) {
-                console.warn("Adsgram SDK unavailable. Simulating ad completion...");
-                setTimeout(() => resolve(true), 1000);
+                console.warn("Adsgram SDK unavailable.");
+                reject("Adsgram SDK unavailable.");
                 return;
             }
             
@@ -145,7 +128,7 @@ export const Ads_Controller = {
                     .catch((err) => reject("Ad skipped or failed."));
             } catch (err) {
                 console.error("Adsgram Execution Error:", err);
-                resolve(true); // Graceful fallback
+                reject("Ad execution error.");
             }
         });
     }
@@ -155,104 +138,122 @@ export const Ads_Controller = {
 // 5. PACKET LOGIC CONTROLLER
 // ==========================================
 export const Packet_Controller = {
-    cooldownTime: 5 * 60 * 1000, // 5 Minutes in ms
-
-    checkCooldown: function() {
-        const lastOpen = localStorage.getItem('last_packet_open');
-        if (!lastOpen) return true;
-
-        const timeDiff = Date.now() - parseInt(lastOpen);
-        if (timeDiff < this.cooldownTime) {
-            const remainingSec = Math.ceil((this.cooldownTime - timeDiff) / 1000);
-            const min = Math.floor(remainingSec / 60);
-            const sec = remainingSec % 60;
-            UI_Controller.showToast(`⏱️ Please wait ${min}m ${sec}s before claiming next packet.`);
-            return false;
-        }
-        return true;
-    },
+    currentPacketData: null,
+    currentPacketId: null,
 
     loadSpecificPacket: async function(packetId) {
+        this.currentPacketId = packetId;
         const viewSingle = document.getElementById('view-single');
+        const viewList = document.getElementById('view-list');
         if (viewSingle) viewSingle.style.display = 'block';
+        if (viewList) viewList.style.display = 'none';
 
-        let limitCount = 500;
-        let openedCount = 245;
-        let channelName = "Crypto Drops Channel";
-        let tokenDetails = "100 USDT Drop";
-
-        // Attempt Firestore Fetch
         try {
             const packetRef = doc(db, "red_packets", packetId);
             const packetSnap = await getDoc(packetRef);
             
-            if (packetSnap.exists()) {
-                const data = packetSnap.data();
-                limitCount = data.openLimit || limitCount;
-                openedCount = data.opened || 0;
-                channelName = data.channelName || channelName;
-                tokenDetails = `${data.amount || '0'} ${data.tokenName || 'USDT'}`;
+            if (!packetSnap.exists()) {
+                UI_Controller.showToast("❌ Red Packet not found or expired.");
+                return;
             }
+
+            this.currentPacketData = packetSnap.data();
+            const data = this.currentPacketData;
+
+            const limitCount = data.openLimit || 0;
+            const openedCount = data.opened || 0;
+            const channelName = data.channelTitle || data.channelName || data.channelUsername || "Official Drop";
+            const tokenDetails = `${data.tokenName || 'USDT'} — ${limitCount} Accounts`;
+
+            // Update UI
+            const chanElem = document.getElementById('rp-channel-name');
+            const tokenElem = document.getElementById('rp-token-info');
+            if (chanElem) chanElem.innerText = channelName;
+            if (tokenElem) tokenElem.innerText = tokenDetails;
+
+            UI_Controller.updateProgressBar(openedCount, limitCount);
+
+            const openBtn = document.getElementById('open-btn');
+            if (openedCount >= limitCount && openBtn) {
+                openBtn.disabled = true;
+                openBtn.innerHTML = `<span>CLAIM LIMIT REACHED</span>`;
+                openBtn.style.opacity = "0.6";
+            }
+
         } catch (e) {
-            console.log("Firestore fetch fallback to default values:", e);
+            console.error("Error loading packet:", e);
+            UI_Controller.showToast("⚠️ Error loading packet details.");
         }
-
-        // Update UI
-        const chanElem = document.getElementById('rp-channel-name');
-        const tokenElem = document.getElementById('rp-token-info');
-        if (chanElem) chanElem.innerText = channelName;
-        if (tokenElem) tokenElem.innerText = tokenDetails;
-
-        UI_Controller.updateProgressBar(openedCount, limitCount);
 
         const openBtn = document.getElementById('open-btn');
         const giftBoxBtn = document.getElementById('gift-box-btn');
 
         const handleOpenAction = async () => {
+            if (!this.currentPacketData || !this.currentPacketId) {
+                UI_Controller.showToast("⚠️ Invalid Red Packet.");
+                return;
+            }
+
+            const openedCount = this.currentPacketData.opened || 0;
+            const limitCount = this.currentPacketData.openLimit || 0;
+
             if (openedCount >= limitCount) {
                 UI_Controller.showToast("❌ Red Packet Fully Claimed!");
                 return;
             }
 
-            if (!this.checkCooldown()) return;
-
-            if (giftBoxBtn) giftBoxBtn.classList.add('shake');
-            UI_Controller.showToast("🎬 Loading rewarded ad...");
+            const user = User_Controller.getUserInfo();
+            const claimRecordId = `${this.currentPacketId}_${user.id}`;
 
             try {
-                // 1. Play Ad
-                await Ads_Controller.playAd();
-
-                // 2. Perform DB Updates if available
-                const user = User_Controller.getUserInfo();
-                try {
-                    await setDoc(doc(db, "claim_records", `${packetId}_${user.id}`), {
-                        redPacketId: packetId,
-                        telegramUserId: user.id,
-                        username: user.username,
-                        openedAt: new Date(),
-                        reward: tokenDetails
-                    });
-
-                    await updateDoc(doc(db, "red_packets", packetId), {
-                        opened: increment(1)
-                    });
-                } catch (dbErr) {
-                    console.log("DB update skipped/demo mode:", dbErr);
+                // ১. চেক করা ইউজার আগে থেকে ক্লেইম করেছে কিনা
+                const claimRef = doc(db, "claim_records", claimRecordId);
+                const claimSnap = await getDoc(claimRef);
+                if (claimSnap.exists()) {
+                    UI_Controller.showToast("❌ You have already claimed this Red Packet!");
+                    return;
                 }
 
-                // 3. Save Cooldown
-                localStorage.setItem('last_packet_open', Date.now().toString());
+                if (giftBoxBtn) giftBoxBtn.classList.add('shake');
+                UI_Controller.showToast("🎬 Loading rewarded ad...");
 
-                // 4. Update local state & trigger UI success
+                // ২. Adsgram এড রান করা (Block ID: 431323)
+                await Ads_Controller.playAd();
+
+                // ৩. ফায়ারবেসে ক্লেইম রেকর্ড ও কাউন্ট আপডেট করা
+                await setDoc(doc(db, "claim_records", claimRecordId), {
+                    redPacketId: this.currentPacketId,
+                    telegramUserId: user.id,
+                    username: user.username,
+                    adWatched: true,
+                    openedAt: serverTimestamp()
+                });
+
+                await updateDoc(doc(db, "red_packets", this.currentPacketId), {
+                    opened: increment(1)
+                });
+
+                // ৪. লোকাল স্টেট ও ইউজার ইন্টারফেস আপডেট
                 if (giftBoxBtn) giftBoxBtn.classList.remove('shake');
-                openedCount++;
-                UI_Controller.updateProgressBar(openedCount, limitCount);
-                UI_Controller.showSuccessAnimation(tokenDetails);
+                this.currentPacketData.opened = openedCount + 1;
+                UI_Controller.updateProgressBar(this.currentPacketData.opened, limitCount);
+                UI_Controller.showToast("✅ Ad completed! Opening Binance Link...");
+
+                // ৫. ইউজারকে কিছু না দেখিয়ে সরাসরি গোপন বিন্যান্স লিংকে রিডাইরেক্ট করা
+                const binanceUrl = this.currentPacketData.binanceLink;
+                if (binanceUrl) {
+                    if (User_Controller.tg?.openLink) {
+                        User_Controller.tg.openLink(binanceUrl);
+                    } else {
+                        window.location.href = binanceUrl;
+                    }
+                } else {
+                    UI_Controller.showToast("❌ Binance Link not available.");
+                }
 
             } catch (error) {
                 if (giftBoxBtn) giftBoxBtn.classList.remove('shake');
-                UI_Controller.showToast(error === "Ad skipped or failed." ? "⚠️ You must watch the complete ad to claim!" : "❌ Connection Error.");
+                UI_Controller.showToast(error === "Ad skipped or failed." ? "⚠️ You must watch the complete ad to claim!" : "❌ Error processing claim.");
             }
         };
 
@@ -261,29 +262,43 @@ export const Packet_Controller = {
     },
 
     loadPacketList: async function() {
+        const viewSingle = document.getElementById('view-single');
         const viewList = document.getElementById('view-list');
         const container = document.getElementById('packet-list-container');
+        
+        if (viewSingle) viewSingle.style.display = 'none';
         if (viewList) viewList.style.display = 'block';
 
         if (!container) return;
 
-        // Render Active Packets (Demo UI or Firestore Collection)
-        container.innerHTML = `
-            <div class="packet-item-card">
-                <div class="packet-info">
-                    <h4>💎 Exclusive USDT Drop</h4>
-                    <p>Limit: 500 | Claimed: 245</p>
-                </div>
-                <span style="color: var(--gold); font-weight: 700; font-size: 13px;">🟢 Active</span>
-            </div>
-            <div class="packet-item-card">
-                <div class="packet-info">
-                    <h4>🚀 TON Community Bonus</h4>
-                    <p>Limit: 1000 | Claimed: 890</p>
-                </div>
-                <span style="color: var(--gold); font-weight: 700; font-size: 13px;">🟢 Active</span>
-            </div>
-        `;
+        try {
+            const q = query(collection(db, "red_packets"), where("status", "==", "active"));
+            const snap = await getDocs(q);
+
+            if (snap.empty) {
+                container.innerHTML = `<div style="text-align:center; padding: 20px; color:#888;">No active Red Packets right now.</div>`;
+                return;
+            }
+
+            let html = "";
+            snap.forEach((docSnap) => {
+                const data = docSnap.data();
+                const id = docSnap.id;
+                html += `
+                    <div class="packet-item-card" onclick="window.location.href='https://t.me/REDPACKETBOXBOT/claim?startapp=${id}'" style="background: rgba(255,255,255,0.05); padding:14px; margin-bottom:10px; border-radius:12px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                        <div class="packet-info">
+                            <h4 style="margin:0; color:var(--gold); font-size:15px;">💎 ${data.tokenName || 'USDT'} Red Packet</h4>
+                            <p style="margin:4px 0 0 0; color:#aaa; font-size:12px;">Channel: ${data.channelTitle || data.channelName || 'VIP Channel'}</p>
+                        </div>
+                        <span style="color: #4CAF50; font-weight: 700; font-size: 13px;">${data.opened || 0}/${data.openLimit || 0}</span>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        } catch (e) {
+            console.error("Error loading active packets list:", e);
+            container.innerHTML = `<div style="text-align:center; padding: 20px; color:#e53935;">Failed to load packets list.</div>`;
+        }
     }
 };
 
@@ -308,8 +323,9 @@ window.addEventListener('DOMContentLoaded', () => {
     const shareBtn = document.getElementById('share-btn');
     if (shareBtn) {
         shareBtn.addEventListener('click', () => {
+            const startParam = User_Controller.tg?.initDataUnsafe?.start_param || Packet_Controller.currentPacketId || '';
             const shareText = "🔥 I just claimed a free Red Packet! Claim yours before it expires 👇";
-            const botLink = `https://t.me/YourBotName?startapp=${startParam || 'drop'}`;
+            const botLink = `https://t.me/REDPACKETBOXBOT/claim?startapp=${startParam}`;
             const telegramShareUrl = `https://t.me/share/url?url=${encodeURIComponent(botLink)}&text=${encodeURIComponent(shareText)}`;
 
             if (User_Controller.tg?.openTelegramLink) {
