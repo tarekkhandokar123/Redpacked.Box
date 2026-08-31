@@ -67,7 +67,7 @@ export const UI_Helper = {
         if (toast) {
             toast.innerText = message;
             toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 3500);
+            setTimeout(() => toast.classList.remove('show'), 4000);
         } else {
             alert(message);
         }
@@ -151,7 +151,7 @@ if (window.Telegram?.WebApp?.BackButton) {
 }
 
 // ==========================================
-// 4. APP INITIALIZATION & VERIFICATION FLOW
+// 4. APP INITIALIZATION & VERIFICATION CHECK
 // ==========================================
 window.addEventListener('DOMContentLoaded', async () => {
     const user = Telegram_Controller.getUser();
@@ -170,25 +170,33 @@ window.addEventListener('DOMContentLoaded', async () => {
         if (profAvatar) profAvatar.src = user.photoUrl;
     }
 
+    // CHECK FIREBASE: ইউজার আগে চ্যানেল ভেরিফাই করে একাউন্ট বানিয়েছে কিনা?
     try {
         const adminRef = doc(db, "admins", user.id.toString());
         const adminSnap = await getDoc(adminRef);
 
         if (adminSnap.exists()) {
+            // একাউন্ট ফায়ারবেসে থাকলে ড্যাশবোর্ডে যাবে
             Router.switchView('dashboard-view');
         } else {
+            // একাউন্ট না থাকলে কেবল ভেরিফিকেশন পেজ দেখাবে (লক থাকবে)
             Router.switchView('verification-view');
             setupVerificationForm(user);
         }
     } catch (e) {
-        console.error("Initialization error:", e);
-        Router.switchView('dashboard-view');
+        console.error("Firebase read error during init:", e);
+        // ফায়ারবেস কানেকশন ফেইল করলেও ভেরিফিকেশন ভিউতেই রাখবে
+        Router.switchView('verification-view');
+        setupVerificationForm(user);
     }
 
     Telegram_Controller.tg?.ready();
     UI_Helper.hideSplash();
 });
 
+// ==========================================
+// 5. VERIFICATION & FIREBASE ACCOUNT CREATION
+// ==========================================
 function setupVerificationForm(user) {
     const form = document.getElementById('verify-form');
     if (!form) return;
@@ -207,7 +215,7 @@ function setupVerificationForm(user) {
             return;
         }
 
-        // Smart Extraction: Extract valid @username from Link or Name input
+        // Extract valid @username
         const validChannelUsername = parseTelegramUsername(rawChanLink) || parseTelegramUsername(rawChanName);
 
         if (!validChannelUsername) {
@@ -218,9 +226,13 @@ function setupVerificationForm(user) {
         UI_Helper.showToast("🔍 Verifying channel admin status...");
 
         try {
+            // API Request to Vercel Webhook
             const response = await fetch('https://redpacked.vercel.app/api/webhook', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
                 body: JSON.stringify({
                     action: 'verify',
                     channelId: validChannelUsername,
@@ -228,12 +240,18 @@ function setupVerificationForm(user) {
                 })
             });
 
+            if (!response.ok) {
+                throw new Error(`Server status ${response.status}`);
+            }
+
             const result = await response.json();
 
             if (result.isVerified) {
                 const cleanDocId = validChannelUsername.replace('@', '').toLowerCase();
 
-                // 1. Save Admin Record in Firestore
+                UI_Helper.showToast("⏳ Saving account to Firebase...");
+
+                // 1. Save Admin Profile in Firebase
                 await setDoc(doc(db, "admins", user.id.toString()), {
                     telegramUserId: user.id.toString(),
                     username: user.username,
@@ -247,7 +265,7 @@ function setupVerificationForm(user) {
                     createdAt: serverTimestamp()
                 }, { merge: true });
 
-                // 2. Save Channel Record in Firestore
+                // 2. Save Channel Data in Firebase
                 await setDoc(doc(db, "channels", cleanDocId), {
                     channelUsername: validChannelUsername,
                     channelTitle: rawChanName,
@@ -258,14 +276,19 @@ function setupVerificationForm(user) {
                     createdAt: serverTimestamp()
                 }, { merge: true });
 
-                UI_Helper.showToast("🎉 Channel Verified & Profile Created!");
-                Router.switchView('dashboard-view');
+                UI_Helper.showToast("🎉 Verified & Account Created Successfully!");
+                
+                // একাউন্ট তৈরি হয়ে গেলে এখন ড্যাশবোর্ডে নিয়ে যাবে
+                setTimeout(() => {
+                    Router.switchView('dashboard-view');
+                }, 1000);
+
             } else {
-                UI_Helper.showToast(result.message || "❌ Channel verification failed. Add bot as Admin!");
+                UI_Helper.showToast(result.message || "❌ You must add the Bot as Admin in your channel!");
             }
         } catch (err) {
             console.error("Verification connection error:", err);
-            UI_Helper.showToast("❌ Connection error during verification!");
+            UI_Helper.showToast(`❌ API Error: ${err.message || "Connection failed"}`);
         }
     };
-}
+                        }
