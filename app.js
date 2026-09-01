@@ -84,11 +84,13 @@ export const UI_Controller = {
     },
 
     openAdminApp: function() {
-        const adminUrl = "https://redpacked.vercel.app/partner.html";
-        if (User_Controller.tg?.openLink) {
-            User_Controller.tg.openLink(adminUrl);
+        const partnerUrl = "https://t.me/REDPACKETBOXBOT/partner";
+        if (User_Controller.tg?.openTelegramLink) {
+            User_Controller.tg.openTelegramLink(partnerUrl);
+        } else if (User_Controller.tg?.openLink) {
+            User_Controller.tg.openLink(partnerUrl);
         } else {
-            window.location.href = adminUrl;
+            window.location.href = partnerUrl;
         }
     },
 
@@ -141,12 +143,23 @@ export const Packet_Controller = {
     currentPacketData: null,
     currentPacketId: null,
 
+    handleBackButtonClick: function() {
+        Packet_Controller.loadPacketList();
+    },
+
     loadSpecificPacket: async function(packetId) {
         this.currentPacketId = packetId;
         const viewSingle = document.getElementById('view-single');
         const viewList = document.getElementById('view-list');
         if (viewSingle) viewSingle.style.display = 'block';
         if (viewList) viewList.style.display = 'none';
+
+        // Telegram Native Back Button শো করা
+        if (User_Controller.tg?.BackButton) {
+            User_Controller.tg.BackButton.show();
+            User_Controller.tg.BackButton.offClick(this.handleBackButtonClick);
+            User_Controller.tg.BackButton.onClick(this.handleBackButtonClick);
+        }
 
         try {
             const packetRef = doc(db, "red_packets", packetId);
@@ -239,7 +252,7 @@ export const Packet_Controller = {
                 UI_Controller.updateProgressBar(this.currentPacketData.opened, limitCount);
                 UI_Controller.showToast("✅ Ad completed! Opening Binance Link...");
 
-                // ৫. ইউজারকে কিছু না দেখিয়ে সরাসরি গোপন বিন্যান্স লিংকে রিডাইরেক্ট করা
+                // ৫. ইউজারকে সরাসরি গোপন বিন্যান্স লিংকে রিডাইরেক্ট করা
                 const binanceUrl = this.currentPacketData.binanceLink;
                 if (binanceUrl) {
                     if (User_Controller.tg?.openLink) {
@@ -269,6 +282,12 @@ export const Packet_Controller = {
         if (viewSingle) viewSingle.style.display = 'none';
         if (viewList) viewList.style.display = 'block';
 
+        // Telegram Native Back Button হাইড করা (লিস্ট ভিউতে থাকলে দরকার নেই)
+        if (User_Controller.tg?.BackButton) {
+            User_Controller.tg.BackButton.hide();
+            User_Controller.tg.BackButton.offClick(this.handleBackButtonClick);
+        }
+
         if (!container) return;
 
         try {
@@ -285,7 +304,7 @@ export const Packet_Controller = {
                 const data = docSnap.data();
                 const id = docSnap.id;
                 html += `
-                    <div class="packet-item-card" onclick="window.location.href='https://t.me/REDPACKETBOXBOT/claim?startapp=${id}'" style="background: rgba(255,255,255,0.05); padding:14px; margin-bottom:10px; border-radius:12px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                    <div class="packet-item-card" onclick="Packet_Controller.loadSpecificPacket('${id}')" style="background: rgba(255,255,255,0.05); padding:14px; margin-bottom:10px; border-radius:12px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
                         <div class="packet-info">
                             <h4 style="margin:0; color:var(--gold); font-size:15px;">💎 ${data.tokenName || 'USDT'} Red Packet</h4>
                             <p style="margin:4px 0 0 0; color:#aaa; font-size:12px;">Channel: ${data.channelTitle || data.channelName || 'VIP Channel'}</p>
@@ -301,6 +320,8 @@ export const Packet_Controller = {
         }
     }
 };
+
+window.Packet_Controller = Packet_Controller;
 
 // ==========================================
 // 6. APPLICATION BOOTSTRAP
@@ -319,7 +340,15 @@ window.addEventListener('DOMContentLoaded', () => {
         Packet_Controller.loadPacketList();
     }
 
-    // 3. Share Button Bindings
+    // 3. Partner / Publish Button Binding
+    const publishBtn = document.getElementById('publish-btn') || document.querySelector('.publish-btn');
+    if (publishBtn) {
+        publishBtn.addEventListener('click', () => {
+            UI_Controller.openAdminApp();
+        });
+    }
+
+    // 4. Share Button Bindings
     const shareBtn = document.getElementById('share-btn');
     if (shareBtn) {
         shareBtn.addEventListener('click', () => {
@@ -336,7 +365,7 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 4. Hide Splash
+    // 5. Hide Splash & Signal Ready
     if (User_Controller.tg?.ready) User_Controller.tg.ready();
     UI_Controller.hideSplash();
 });
