@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Red Packet Box</title>
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+    <!-- Toast Notification -->
+    <div id="toast-container"></div>
+
+    <!-- Header Navigation -->
+    <header class="admin-header">
+        <div class="logo-area">
+            <h2>👑 Admin Control Panel</h2>
+        </div>
+        <div class="admin-info">
+            <span id="admin-username">Admin</span>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="admin-nav">
+        <button class="nav-btn active" onclick="switchSection('dashboard-sec', this)">📊 Overview</button>
+        <button class="nav-btn" onclick="switchSection('withdrawals-sec', this)">💳 Withdrawals</button>
+        <button class="nav-btn" onclick="switchSection('partners-sec', this)">👥 Partners</button>
+        <button class="nav-btn" onclick="switchSection('ads-sec', this)">⚙️ Ad Networks</button>
+    </nav>
+
+    <main class="admin-container">
+        <!-- 1. DASHBOARD OVERVIEW -->
+        <section id="dashboard-sec" class="admin-section active">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Total Partners</h3>
+                    <p id="stat-total-partners">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Pending Withdrawals</h3>
+                    <p id="stat-pending-withdrawals">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Paid</h3>
+                    <p id="stat-total-paid">$0.00</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Active Adsgram</h3>
+                    <p id="stat-adsgram-status">OFF</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. WITHDRAWAL REQUESTS MANAGEMENT -->
+        <section id="withdrawals-sec" class="admin-section">
+            <div class="section-header">
+                <h3>Withdrawal Requests & History</h3>
+                <div class="filter-group">
+                    <select id="withdraw-filter" onchange="Status_Module.filterWithdrawals()">
+                        <option value="all">All Requests</option>
+                        <option value="pending" selected>Pending Only</option>
+                        <option value="approved">Approved</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>User ID</th>
+                            <th>Binance UID</th>
+                            <th>Requested</th>
+                            <th>Net Payout</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="withdrawals-table-body">
+                        <tr><td colspan="7" class="empty-msg">Loading withdrawal requests...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 3. PARTNER / USER MANAGEMENT -->
+        <section id="partners-sec" class="admin-section">
+            <div class="section-header">
+                <h3>Partner Management</h3>
+                <input type="text" id="partner-search-input" placeholder="Search by Telegram ID or Name..." onkeyup="Admin_Module.searchPartners()">
+            </div>
+
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Telegram ID</th>
+                            <th>Name / Username</th>
+                            <th>Channel</th>
+                            <th>Available Bal</th>
+                            <th>Holding Bal</th>
+                            <th>Withdrawable Bal</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="partners-table-body">
+                        <tr><td colspan="7" class="empty-msg">Loading partner accounts...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 4. AD NETWORKS MANAGEMENT -->
+        <section id="ads-sec" class="admin-section">
+            <div class="section-header">
+                <h3>Multiple Ad Networks Configuration</h3>
+            </div>
+
+            <!-- Ad Network 1: Adsgram -->
+            <div class="config-card">
+                <div class="config-header">
+                    <h4>Network 1: Adsgram Configuration</h4>
+                    <label class="switch">
+                        <input type="checkbox" id="net1-toggle" onchange="Ads_Manage_Module.toggleNetwork(1, this.checked)">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>Adsgram Block / Unit ID</label>
+                    <input type="text" id="adsgram-block-id" placeholder="Enter Adsgram Block ID">
+                </div>
+            </div>
+
+            <!-- Ad Network 2: Monetag + Adexium + TadsAds Fallback -->
+            <div class="config-card">
+                <div class="config-header">
+                    <h4>Network 2: Multi-Ad Engine (Monetag + Adexium + TadsAds Fallback)</h4>
+                    <label class="switch">
+                        <input type="checkbox" id="net2-toggle" onchange="Ads_Manage_Module.toggleNetwork(2, this.checked)">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <p class="config-desc">System attempts Monetag first, then Adexium. If both fail, it falls back to TadsAds automatically.</p>
+                
+                <div class="form-group">
+                    <label>Monetag Tag ID / Direct Link</label>
+                    <input type="text" id="monetag-id" placeholder="Enter Monetag Tag ID">
+                </div>
+                <div class="form-group">
+                    <label>Adexium Zone ID</label>
+                    <input type="text" id="adexium-zone-id" placeholder="Enter Adexium Zone ID">
+                </div>
+                <div class="form-group">
+                    <label>TadsAds Fallback API Key / URL</label>
+                    <input type="text" id="tadsads-key" placeholder="Enter TadsAds API Key">
+                </div>
+            </div>
+
+            <button class="primary-btn" onclick="Ads_Manage_Module.saveAdConfigurations()">💾 Save All Ad Settings</button>
+        </section>
+    </main>
+
+    <!-- Partner Edit Modal -->
+    <div id="partner-modal" class="modal">
+        <div class="modal-content">
+            <h3>Edit Partner Account</h3>
+            <form id="edit-partner-form">
+                <input type="hidden" id="edit-user-id">
+                <div class="form-group">
+                    <label>Telegram User ID</label>
+                    <input type="text" id="edit-user-id-disp" disabled>
+                </div>
+                <div class="form-group">
+                    <label>Available Balance (USDT)</label>
+                    <input type="number" step="0.001" id="edit-avail-bal" required>
+                </div>
+                <div class="form-group">
+                    <label>Holding Balance (USDT)</label>
+                    <input type="number" step="0.001" id="edit-hold-bal" required>
+                </div>
+                <div class="form-group">
+                    <label>Withdrawable Balance (USDT)</label>
+                    <input type="number" step="0.001" id="edit-with-bal" required>
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" class="cancel-btn" onclick="Admin_Module.closePartnerModal()">Cancel</button>
+                    <button type="submit" class="primary-btn">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Firebase v12 Modules & Scripts -->
+    <script type="module" src="js/admin.js"></script>
+</body>
+  </html>
