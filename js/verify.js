@@ -16,7 +16,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
 
 // Telegram Bot Configuration
-const BOT_TOKEN = "7963495475:AAHV4L...YOUR_BOT_TOKEN"; // আপনার বটের আসল API Token এখানে দিন
+const BOT_TOKEN = "7963495475:AAHV4L...YOUR_BOT_TOKEN"; // Replace with your actual Bot Token
 const BOT_USERNAME = "REDPACKETBOXBOT";
 
 // Firebase Configuration
@@ -33,7 +33,7 @@ const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 
 /**
- * টোস্ট মেসেজ বা অ্যালার্ট দেখানোর হেল্পার
+ * Helper function to show toast messages or alerts
  */
 function notify(msg, isError = false) {
     if (window.UI_Controller && typeof window.UI_Controller.showToast === 'function') {
@@ -44,7 +44,7 @@ function notify(msg, isError = false) {
 }
 
 // ==========================================
-// REQ 1 & 3: ইউজারের ভেরিফাইড চ্যানেলের তালিকা দেখা
+// REQ 1 & 3: FETCH USER'S VERIFIED CHANNELS
 // ==========================================
 export async function getUserVerifiedChannels(telegramUserId) {
     try {
@@ -61,52 +61,52 @@ export async function getUserVerifiedChannels(telegramUserId) {
 }
 
 // ==========================================
-// REQ 2: কঠোর চ্যানেল ভেরিফিকেশন ও সেভ
+// REQ 2: STRICT CHANNEL VERIFICATION & SAVE
 // (Owner Check + Min 500 Subs + Bot Admin Perms)
 // ==========================================
 export async function verifyAndSaveChannel(channelUsername, telegramUserId) {
     if (!channelUsername || !telegramUserId) {
-        notify("⚠️ চ্যানেল ইউজারনেম অথবা ইউজার আইডি পাওয়া যায়নি!", true);
+        notify("⚠️ Channel username or user ID not found!", true);
         return { success: false };
     }
 
-    // ইউজারনেম ফরম্যাট করা
+    // Format username
     let formattedChannel = channelUsername.trim();
     if (!formattedChannel.startsWith('@') && !formattedChannel.startsWith('-100')) {
         formattedChannel = `@${formattedChannel}`;
     }
 
     try {
-        notify("🔍 চ্যানেল এবং বটের পারমিশন যাচাই করা হচ্ছে...");
+        notify("🔍 Verifying channel and bot permissions...");
 
-        // A. Telegram API: চ্যানেলের বেসিক তথ্য আনা
+        // A. Telegram API: Fetch basic channel information
         const chatRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getChat?chat_id=${formattedChannel}`);
         const chatData = await chatRes.json();
         if (!chatData.ok) {
-            throw new Error("চ্যানেলটি পাওয়া যায়নি! ইউজারনেম সঠিক দিন এবং বটকে চ্যানেলে এড করুন।");
+            throw new Error("Channel not found! Check username accuracy and ensure the bot is added to the channel.");
         }
 
         const chatId = chatData.result.id.toString();
         const chatTitle = chatData.result.title;
 
-        // B. Telegram API: সাবস্ক্রাইবার সংখ্যা চেক (সর্বনিম্ন ৫০০)
+        // B. Telegram API: Subscriber count check (Minimum 500 required)
         const countRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getChatMemberCount?chat_id=${chatId}`);
         const countData = await countRes.json();
         const subCount = countData.ok ? countData.result : 0;
 
         if (subCount < 500) {
-            throw new Error(`চ্যানেলে সর্বনিম্ন ৫০০ সাবস্ক্রাইবার থাকতে হবে! আপনার আছে: ${subCount}`);
+            throw new Error(`Channel must have at least 500 subscribers! Current count: ${subCount}`);
         }
 
-        // C. Telegram API: ইউজার চ্যানেলের Owner/Creator কিনা চেক
+        // C. Telegram API: Check if user is the Channel Owner/Creator
         const userMemberRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getChatMember?chat_id=${chatId}&user_id=${telegramUserId}`);
         const userMemberData = await userMemberRes.json();
 
         if (!userMemberData.ok || userMemberData.result.status !== 'creator') {
-            throw new Error("আপনি এই চ্যানেলের মূল ওনার (Owner) নন! শুধুমাত্র ওনার চ্যানেল এড করতে পারবেন।");
+            throw new Error("You are not the Owner of this channel! Only the channel Creator can connect channels.");
         }
 
-        // D. Telegram API: বটের পারমিশন চেক (Admin + Post, Edit, Delete Messages)
+        // D. Telegram API: Check bot status & required permissions
         const botMeRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getMe`);
         const botMe = await botMeRes.json();
 
@@ -114,15 +114,15 @@ export async function verifyAndSaveChannel(channelUsername, telegramUserId) {
         const botMemberData = await botMemberRes.json();
 
         if (!botMemberData.ok || botMemberData.result.status !== 'administrator') {
-            throw new Error(`বট @${BOT_USERNAME} কে চ্যানেলে এডমিন করতে হবে!`);
+            throw new Error(`Bot @${BOT_USERNAME} must be added as an Administrator in your channel!`);
         }
 
         const perms = botMemberData.result;
         if (!perms.can_post_messages || !perms.can_edit_messages || !perms.can_delete_messages) {
-            throw new Error("বটকে অবশ্যই Post, Edit, এবং Delete Messages এর পারমিশন দিতে হবে!");
+            throw new Error("Bot requires Post Messages, Edit Messages, and Delete Messages permissions!");
         }
 
-        // E. Firebase Firestore-এ চ্যানেল সেভ করা (Multi-Channel Support)
+        // E. Save Channel Data to Firestore (Multi-Channel Support)
         const cleanDocId = chatId.replace('-', '');
         const newChannelData = {
             id: chatId,
@@ -132,7 +132,7 @@ export async function verifyAndSaveChannel(channelUsername, telegramUserId) {
             verifiedAt: new Date().toISOString()
         };
 
-        // 1. ইন্ডিভিজুয়াল "channels" কালেকশনে সেভ
+        // 1. Save in individual "channels" collection
         await setDoc(doc(db, "channels", cleanDocId), {
             channelId: chatId,
             channelUsername: formattedChannel,
@@ -143,7 +143,7 @@ export async function verifyAndSaveChannel(channelUsername, telegramUserId) {
             createdAt: serverTimestamp()
         }, { merge: true });
 
-        // 2. ইউজারের আন্ডারে চ্যানেলের লিস্টে যুক্ত করা (Array Append)
+        // 2. Append to user's channel list array
         const userRef = doc(db, "admin_users", telegramUserId.toString());
         await setDoc(userRef, {
             ownerId: telegramUserId.toString(),
@@ -151,7 +151,7 @@ export async function verifyAndSaveChannel(channelUsername, telegramUserId) {
             updatedAt: serverTimestamp()
         }, { merge: true });
 
-        notify(`✅ Success! ${chatTitle} চ্যানেল সফলভাবে ভেরিফাই ও এড করা হয়েছে।`);
+        notify(`✅ Success! Channel "${chatTitle}" verified and added successfully.`);
         return { success: true, channel: newChannelData };
 
     } catch (error) {
@@ -162,19 +162,19 @@ export async function verifyAndSaveChannel(channelUsername, telegramUserId) {
 }
 
 // ==========================================
-// REQ 1: চ্যানেল না থাকলে রেড প্যাকেট ব্লক চেক
+// REQ 1: RED PACKET CREATION LOCK CHECK
 // ==========================================
 export async function canUserCreatePacket(telegramUserId) {
     const channels = await getUserVerifiedChannels(telegramUserId);
     if (!channels || channels.length === 0) {
-        notify("⚠️ রেড প্যাকেট সেট করতে অন্তত একটি চ্যানেল ভেরিফাই করতে হবে!", true);
+        notify("⚠️ You must verify at least one channel to create a Red Packet!", true);
         return false;
     }
     return true;
 }
 
 // ==========================================
-// REQ 4: রেড প্যাকেট তৈরি ও ফাইল সেভ
+// REQ 4: RED PACKET CREATION & DATA SAVING
 // ==========================================
 export async function saveRedPacket(telegramUserId, packetDetails) {
     const isAllowed = await canUserCreatePacket(telegramUserId);
@@ -195,7 +195,7 @@ export async function saveRedPacket(telegramUserId, packetDetails) {
 
     try {
         await setDoc(doc(db, "red_packets", packetId), packetData);
-        // ইউজারের সর্বশেষ ক্রিয়েট করা রেড প্যাকেট আইডি সেভ করা
+        // Save latest created Red Packet ID under user document
         await setDoc(doc(db, "admin_users", telegramUserId.toString()), {
             latestPacket: packetData
         }, { merge: true });
@@ -209,22 +209,22 @@ export async function saveRedPacket(telegramUserId, packetDetails) {
 }
 
 // ==========================================
-// REQ 5: অটোমেটিক চ্যানেল পাবলিশিং (Bot API sendMessage)
+// REQ 5: AUTOMATIC CHANNEL PUBLISHING (Bot API sendMessage)
 // ==========================================
 export async function publishPacketToChannels(packetData, customCaption, targetChannelIds = []) {
     if (!targetChannelIds || targetChannelIds.length === 0) {
-        notify("❌ কমপক্ষে একটি চ্যানেল সিলেক্ট করুন!", true);
+        notify("❌ Please select at least one channel!", true);
         return { success: false };
     }
 
     const claimLink = `https://t.me/${BOT_USERNAME}/claim?startapp=${packetData.id}`;
     
-    // হাইলাইট অংশ (টোকেন নাম ও কত পাবে) + ইউজারের লেখা কাস্টম ক্যাপশন
-    const formattedText = `<b>🎁 TOKEN: ${packetData.tokenName}</b>\n<b>💰 REWARD: ${packetData.amountPerUser}</b>\n\n${customCaption}`;
+    // Catchy Crypto Title & Post Template
+    const formattedText = `<b>🔥 EXCLUSIVE CRYPTO RED PACKET DROP 🔥</b>\n\n<b>🎁 TOKEN:</b> ${packetData.tokenName}\n<b>💰 REWARD PER USER:</b> ${packetData.amountPerUser}\n\n${customCaption}`;
 
     const inlineKeyboard = {
         inline_keyboard: [
-            [{ text: "🎁 CLAIM RED PACKET", url: claimLink }]
+            [{ text: "🎁 CLAIM RED PACKET NOW", url: claimLink }]
         ]
     };
 
@@ -250,10 +250,10 @@ export async function publishPacketToChannels(packetData, customCaption, targetC
     }
 
     if (publishedCount > 0) {
-        notify(`🚀 ${publishedCount} টি চ্যানেলে সফলভাবে পোস্ট করা হয়েছে!`);
+        notify(`🚀 Published successfully to ${publishedCount} channel(s)!`);
         return { success: true, count: publishedCount };
     } else {
-        notify("❌ পোস্ট করা সম্ভব হয়নি! বটের পারমিশন চেক করুন।", true);
+        notify("❌ Failed to publish post! Please check bot admin permissions.", true);
         return { success: false };
     }
 }
