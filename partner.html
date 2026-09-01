@@ -1,29 +1,12 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Channel Admin Panel - Red Packet</title>
+    <title>Partner Portal - Red Packet Box</title>
     <!-- Telegram WebApp SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="partner.css">
-    <style>
-        .channel-selector-bar { display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 10px 14px; border-radius: 12px; margin-bottom: 15px; border: 1px solid rgba(255,215,0,0.2); }
-        .add-chan-btn { background: var(--gold, #FFD700); color: #000; border: none; padding: 6px 12px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; font-size: 13px; }
-        .bot-copy-box { background: rgba(255,255,255,0.08); padding: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin: 10px 0; border: 1px dashed #FFD700; }
-        .perm-list { font-size: 12px; color: #ccc; margin-bottom: 15px; padding-left: 18px; }
-        .perm-list li { margin-bottom: 4px; color: #4CAF50; }
-        .latest-packet-card { background: linear-gradient(135deg, rgba(255,215,0,0.15), rgba(0,0,0,0.4)); border: 1px solid #FFD700; border-radius: 12px; padding: 14px; margin-bottom: 20px; }
-        .latest-packet-actions { display: flex; gap: 10px; margin-top: 10px; }
-        .latest-packet-actions button { flex: 1; padding: 8px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; }
-        .btn-copy { background: #333; color: #fff; }
-        .btn-post { background: #FFD700; color: #000; }
-        /* Modal Style */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 15px; }
-        .post-modal-content { background: #1a1a1a; border: 1px solid #333; border-radius: 16px; width: 100%; max-width: 450px; padding: 20px; color: #fff; }
-        .highlight-header { background: rgba(255,215,0,0.2); border-left: 4px solid #FFD700; padding: 10px; border-radius: 6px; margin-bottom: 12px; font-weight: bold; }
-        .chan-checkbox-item { display: flex; align-items: center; gap: 10px; padding: 8px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 6px; cursor: pointer; }
-    </style>
 </head>
 <body>
     <!-- Top Toast Notification -->
@@ -38,7 +21,7 @@
                 <path d="M12 16h.01"/>
             </svg>
         </div>
-        <div class="loading-text">Loading Admin Portal...</div>
+        <div class="loading-text">Loading Partner Portal...</div>
     </div>
 
     <!-- Main Admin App Container -->
@@ -48,46 +31,50 @@
         <header>
             <div class="admin-profile-mini" onclick="Router.switchView('profile-view')">
                 <img id="header-avatar" src="default-avatar.png" alt="Admin">
-                <span id="header-name">Admin</span>
+                <span id="header-name">Partner</span>
             </div>
             <div class="nav-links">
+                <!-- Requirement 3: Quick Add Channel Button -->
+                <button onclick="Router.switchView('verification-view')" class="add-chan-btn" title="Add New Channel">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <span>Channel</span>
+                </button>
                 <button onclick="Router.switchView('dashboard-view')" class="nav-btn">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                     Dashboard
                 </button>
-                <button onclick="Router.switchView('create-view')" class="nav-btn">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    Publish
-                </button>
             </div>
         </header>
 
-        <!-- Dynamic Views Container -->
+        <!-- Dynamic Views Container (Lazy Loaded) -->
         <main id="main-content">
             
-            <!-- VIEW 1: Channel Verification -->
+            <!-- VIEW 1: Channel Verification & Addition (Requirement 2 & 3) -->
             <section id="verification-view" class="view-section" style="display: none;">
                 <h2>Add & Verify Channel</h2>
-                <p class="subtitle">You must be the <b>Owner (Creator)</b> of a channel with minimum <b>500 Subscribers</b>.</p>
+                <p class="subtitle">Connect your Telegram Channel to start publishing Red Packets.</p>
                 
-                <div class="bot-copy-box">
-                    <span style="font-weight: bold; color: #FFD700;">@REDPACKETBOXBOT</span>
-                    <button type="button" onclick="Partner_Module.copyBotUsername()" style="padding: 4px 10px; background: #FFD700; border:none; border-radius: 4px; cursor:pointer; font-weight:bold;">Copy Bot</button>
+                <!-- Bot Admin Requirements Box -->
+                <div class="bot-rules-card" style="background: rgba(255, 215, 0, 0.08); border: 1px solid rgba(255, 215, 0, 0.3); padding: 12px 15px; border-radius: 12px; margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="font-weight: bold; color: #FFD700; font-size: 13px;">🤖 Bot Username: @REDPACKETBOXBOT</span>
+                        <button type="button" class="copy-small-btn" onclick="navigator.clipboard.writeText('@REDPACKETBOXBOT'); UI_Helper.showToast('Bot Username Copied!')" style="background: #FFD700; color: #000; border: none; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 11px; cursor: pointer;">
+                            Copy Bot Username
+                        </button>
+                    </div>
+                    <ul style="margin: 0; padding-left: 18px; font-size: 12px; color: #ccc; line-height: 1.6;">
+                        <li>You MUST be the <strong>Owner (Creator)</strong> of the channel.</li>
+                        <li>Minimum <strong>500 Subscribers</strong> required.</li>
+                        <li>Add bot as Admin with permissions: <strong>Post Messages, Edit Messages, Delete Messages</strong>.</li>
+                    </ul>
                 </div>
-
-                <p style="font-size: 13px; margin-top: 10px; color: #aaa;">অবশ্যই বটকে চ্যানেলে এডমিন বানিয়ে নিচের পারমিশনগুলো দিতে হবে:</p>
-                <ul class="perm-list">
-                    <li>✓ Post Messages (পোস্ট করার পারমিশন)</li>
-                    <li>✓ Edit Messages (এডিট করার পারমিশন)</li>
-                    <li>✓ Delete Messages (ডিলিট করার পারমিশন)</li>
-                </ul>
 
                 <form id="verify-form">
                     <div class="form-group">
-                        <label>Channel Username or ID:</label>
-                        <input type="text" id="chan-link" placeholder="@yourchannel or -100xxxxxxx" required>
+                        <label>Channel Username or Link:</label>
+                        <input type="text" id="chan-link" placeholder="e.g. @YourChannel or https://t.me/YourChannel" required>
                     </div>
-                    <button type="submit" class="primary-btn" id="verify-submit-btn">
+                    <button type="submit" class="primary-btn">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                         Verify & Add Channel
                     </button>
@@ -97,28 +84,35 @@
             <!-- VIEW 2: Admin Dashboard -->
             <section id="dashboard-view" class="view-section" style="display: none;">
                 
-                <!-- Multi-Channel Management Bar -->
-                <div class="channel-selector-bar">
-                    <select id="channel-dropdown" onchange="Partner_Module.onChannelSelectChange(this.value)" style="background:transparent; color:#FFD700; border:none; font-weight:bold; font-size:15px; outline:none; width:70%;">
-                        <!-- Dynamic Channels Options -->
-                    </select>
-                    <button class="add-chan-btn" onclick="Router.switchView('verification-view')">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                        Add Channel
+                <!-- Channel Selector Header with Plus Icon (Requirement 3) -->
+                <div class="channel-banner" style="display: flex; align-items: center; justify-content: space-between;">
+                    <div class="banner-left" style="display: flex; align-items: center; gap: 8px; width: 80%;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFD700" stroke-width="2"><path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8 2a2 2 0 0 1-4 0"/></svg>
+                        <select id="channel-dropdown" style="background: transparent; color: #fff; border: none; font-size: 14px; font-weight: bold; width: 100%; outline: none; cursor: pointer;">
+                            <option value="">Loading Channels...</option>
+                        </select>
+                    </div>
+                    <button type="button" onclick="Router.switchView('verification-view')" style="background: rgba(255, 215, 0, 0.2); border: 1px solid #FFD700; color: #FFD700; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; cursor: pointer;" title="Add Another Channel">
+                        +
                     </button>
                 </div>
 
-                <!-- Latest Created Red Packet Widget -->
-                <div id="latest-packet-widget" class="latest-packet-card" style="display: none;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-size: 12px; color: #FFD700; text-transform: uppercase; font-weight: bold;">🔥 Latest Red Packet</span>
-                        <span id="latest-rp-time" style="font-size: 11px; color: #aaa;">Just now</span>
+                <!-- Requirement 4: Latest Active Red Packet Widget -->
+                <div id="latest-packet-widget" class="latest-card" style="display: none; background: linear-gradient(135deg, rgba(255,215,0,0.1), rgba(0,0,0,0.4)); border: 1px solid #FFD700; border-radius: 12px; padding: 15px; margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-size: 11px; color: #FFD700; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">🔥 Latest Active Red Packet</span>
+                        <span class="status-badge-active" style="font-size: 10px; background: #4CAF50; color: #fff; padding: 2px 6px; border-radius: 4px;">Live</span>
                     </div>
-                    <h4 id="latest-rp-title" style="margin: 8px 0 4px 0; font-size: 16px; color: #fff;">USDT Drop</h4>
-                    <p id="latest-rp-info" style="margin: 0; font-size: 13px; color: #ccc;">Amount: 100 USDT | Limit: 500 Users</p>
-                    <div class="latest-packet-actions">
-                        <button class="btn-copy" onclick="Partner_Module.copyLatestLink()">📋 Copy Link</button>
-                        <button class="btn-post" onclick="Partner_Module.openPostModalForLatest()">🚀 Share / Post</button>
+                    <h3 id="latest-rp-title" style="margin: 0 0 4px 0; font-size: 16px; color: #fff;">USDT Red Packet</h3>
+                    <p id="latest-rp-info" style="margin: 0 0 12px 0; font-size: 12px; color: #aaa;">Amount: 100 USDT | Limit: 500 Users</p>
+                    
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" onclick="RedPacket_Module.copyClaimLink()" style="flex: 1; background: #333; color: #fff; border: 1px solid #555; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                            📋 Copy Link
+                        </button>
+                        <button type="button" onclick="RedPacket_Module.openPostModal()" style="flex: 1; background: #FFD700; color: #000; border: none; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                            🚀 Post / Share
+                        </button>
                     </div>
                 </div>
 
@@ -138,28 +132,26 @@
                 </div>
 
                 <div class="action-banner">
-                    <button class="primary-btn" onclick="Partner_Module.checkAndOpenCreateView()">
+                    <button class="primary-btn" onclick="Router.switchView('create-view')">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                        Publish New Red Packet
+                        Create New Red Packet
                     </button>
                 </div>
 
                 <div class="packets-list-container">
-                    <h3>Active & History Red Packets</h3>
-                    <div id="admin-packets-list"></div>
+                    <h3>All Red Packets History</h3>
+                    <div id="admin-packets-list">
+                        <!-- Dynamic list items will load here -->
+                    </div>
                 </div>
             </section>
 
-            <!-- VIEW 3: Create Red Packet Form -->
+            <!-- VIEW 3: Create Red Packet Form (Requirement 1 - Locked without Verified Channel) -->
             <section id="create-view" class="view-section" style="display: none;">
                 <h2>Create Red Packet</h2>
-                
-                <!-- Unverified Warning Block (Shows if no channel added) -->
-                <div id="no-channel-warning" style="display: none; background: rgba(229, 57, 53, 0.2); border: 1px solid #e53935; padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 15px;">
-                    <p style="color: #ff6b6b; margin-bottom: 10px; font-weight: bold;">⚠️ কোনো চ্যানেল ভেরিফাই করা নেই!</p>
-                    <p style="font-size: 13px; color: #ccc; margin-bottom: 12px;">রেড প্যাকেট তৈরি করতে আপনাকে অবশ্যই অন্তত একটি টেলিগ্রাম চ্যানেল ভেরিফাই করতে হবে।</p>
-                    <button class="primary-btn" onclick="Router.switchView('verification-view')">+ Add Channel Now</button>
-                </div>
+
+                <!-- Lock Warning Box if No Channel Connected -->
+                <div id="no-channel-warning" style="display: none;"></div>
 
                 <form id="create-packet-form">
                     <div class="form-group">
@@ -180,25 +172,27 @@
                     </div>
                     <button type="submit" id="publish-submit-btn" class="primary-btn">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                        Verify & Create Red Packet
+                        Create & Publish Packet
                     </button>
                 </form>
             </section>
 
-            <!-- VIEW 4: Profile Page -->
+            <!-- VIEW 4: Profile & Withdraw Page -->
             <section id="profile-view" class="view-section" style="display: none;">
                 <div class="profile-header-card">
                     <img id="prof-avatar" src="default-avatar.png" alt="Profile">
-                    <h3 id="prof-name">Admin</h3>
+                    <h3 id="prof-name">Partner Admin</h3>
                     <p id="prof-username">@admin</p>
                 </div>
 
+                <!-- Tabs Navigation -->
                 <div class="profile-tabs">
                     <button class="tab-btn active" onclick="Withdraw_Module.switchTab('income-tab')">Income</button>
                     <button class="tab-btn" onclick="Withdraw_Module.switchTab('stats-tab')">Statistics</button>
                     <button class="tab-btn" onclick="Withdraw_Module.switchTab('withdraw-tab')">Withdraw</button>
                 </div>
 
+                <!-- Tab 1: Income -->
                 <div id="income-tab" class="tab-content">
                     <div class="balance-card">
                         <h4>Available Balance</h4>
@@ -215,17 +209,19 @@
                     </div>
                 </div>
 
+                <!-- Tab 2: Statistics -->
                 <div id="stats-tab" class="tab-content" style="display: none;">
-                    <div class="stat-row">
-                        <span>Total Verified Channels:</span>
-                        <strong id="prof-total-channels">0</strong>
-                    </div>
                     <div class="stat-row">
                         <span>Total Channel Posts:</span>
                         <strong id="prof-total-posts">0</strong>
                     </div>
+                    <div class="stat-row">
+                        <span>Total Users Claimed:</span>
+                        <strong id="prof-total-claimed">0</strong>
+                    </div>
                 </div>
 
+                <!-- Tab 3: Withdraw -->
                 <div id="withdraw-tab" class="tab-content" style="display: none;">
                     <form id="withdraw-form">
                         <div class="form-group">
@@ -243,7 +239,7 @@
 
         </main>
 
-        <!-- Footer Area -->
+        <!-- Footer Section -->
         <div class="app-footer-section">
             <div class="sponsor-badge">
                 <span>🚀 Sponsored by</span>
@@ -251,6 +247,9 @@
             </div>
             
             <a href="https://t.me/Onlineadsofficial" target="_blank" class="support-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
                 Contact Official Support (@Onlineadsofficial)
             </a>
         </div>
@@ -258,47 +257,69 @@
         <!-- Bottom Fixed Navigation Bar -->
         <nav class="bottom-nav">
             <button class="bottom-nav-item active" onclick="Router.switchView('dashboard-view')">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                 <span>Dashboard</span>
             </button>
-            <button class="bottom-nav-item" onclick="Partner_Module.checkAndOpenCreateView()">
+            <button class="bottom-nav-item" onclick="Router.switchView('create-view')">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
                 <span>Create</span>
             </button>
             <button class="bottom-nav-item" onclick="Router.switchView('profile-view')">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 <span>Profile</span>
             </button>
         </nav>
     </div>
 
-    <!-- POST TO CHANNEL MODAL ( REQUIREMENT 5 ) -->
-    <div id="post-publish-modal" class="modal-overlay" style="display: none;">
-        <div class="post-modal-content">
-            <h3 style="margin-top:0; color:#FFD700;">🚀 Publish Red Packet to Channel</h3>
+    <!-- REQUIREMENT 5: POST & SHARE CUSTOMIZER MODAL -->
+    <div id="post-publish-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; padding: 15px;">
+        <div class="modal-content" style="background: #1e1e1e; border: 1px solid #FFD700; border-radius: 16px; width: 100%; max-width: 400px; padding: 20px; color: #fff;">
             
-            <!-- Fixed Highlights Header -->
-            <div class="highlight-header">
-                🎁 Token: <span id="modal-token-name">USDT</span> | 💰 Amount: <span id="modal-token-amt">100 USDT</span>
-            </div>
-
-            <div class="form-group">
-                <label style="font-size: 13px; color: #aaa;">Post Title / Caption (Customizable):</label>
-                <textarea id="modal-post-caption" rows="4" style="width:100%; background:#2a2a2a; color:#fff; border:1px solid #444; border-radius:8px; padding:10px; font-size:13px;"></textarea>
-            </div>
-
-            <div class="form-group">
-                <label style="font-size: 13px; color: #aaa; margin-bottom: 6px; display:block;">Select Channel(s) to Post:</label>
-                <div id="modal-channel-list">
-                    <!-- Dynamic Channel Checkboxes -->
+            <h3 style="margin-top:0; color:#FFD700; font-size:18px; text-align:center;">Customize & Publish Post</h3>
+            
+            <!-- Fixed Token & Reward Highlight Header -->
+            <div style="background: rgba(255, 215, 0, 0.15); border: 1px dashed #FFD700; border-radius: 8px; padding: 10px; margin-bottom: 15px; display: flex; justify-content: space-around; text-align: center;">
+                <div>
+                    <small style="color: #aaa; font-size: 10px; display: block;">TOKEN NAME</small>
+                    <strong id="modal-token-name" style="color: #FFD700; font-size: 14px;">USDT</strong>
+                </div>
+                <div style="border-left: 1px solid rgba(255,255,255,0.2);"></div>
+                <div>
+                    <small style="color: #aaa; font-size: 10px; display: block;">REWARD PER USER</small>
+                    <strong id="modal-token-amt" style="color: #FFD700; font-size: 14px;">100 USDT</strong>
                 </div>
             </div>
 
-            <div style="display:flex; gap:10px; margin-top:15px;">
-                <button type="button" onclick="Partner_Module.closePostModal()" style="flex:1; background:#444; color:#fff; border:none; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer;">Cancel</button>
-                <button type="button" onclick="Partner_Module.executeTelegramPost()" id="btn-final-post" style="flex:2; background:#FFD700; color:#000; border:none; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer;">Publish Now</button>
+            <!-- Editable Caption Area -->
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label style="font-size: 12px; color: #ccc; margin-bottom: 5px; display: block;">Post Caption / Title:</label>
+                <textarea id="modal-post-caption" rows="4" style="width: 100%; background: #121212; border: 1px solid #333; color: #fff; padding: 10px; border-radius: 8px; font-size: 12px; resize: none; outline: none; box-sizing: border-box;"></textarea>
+            </div>
+
+            <!-- Channel Selection Area -->
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label style="font-size: 12px; color: #ccc; margin-bottom: 8px; display: block;">Select Target Channel(s):</label>
+                <div id="modal-channel-list" style="max-height: 120px; overflow-y: auto; background: #121212; padding: 10px; border-radius: 8px; border: 1px solid #333;">
+                    <!-- Dynamically populated via JS -->
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display: flex; gap: 10px;">
+                <button type="button" id="btn-final-publish" onclick="RedPacket_Module.publishToSelectedChannels()" class="primary-btn" style="flex: 2; margin: 0;">
+                    🚀 Publish Now
+                </button>
+                <button type="button" onclick="RedPacket_Module.closePostModal()" class="cancel-btn" style="flex: 1; background: #333; color: #ccc; border: 1px solid #444; border-radius: 8px; font-weight: bold; cursor: pointer;">
+                    Cancel
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- Modular Script Import -->
+    <!-- Modular Script Imports -->
     <script type="module" src="js/partner.js"></script>
+    <script type="module" src="js/dashboard.js"></script>
+    <script type="module" src="js/withdraw.js"></script>
+    <script type="module" src="js/verify.js"></script>
 </body>
 </html>
