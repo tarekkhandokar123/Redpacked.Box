@@ -20,9 +20,9 @@ import {
 // ==========================================
 // CONFIGURATION & CONSTANTS
 // ==========================================
-const BOT_TOKEN = "7963495475:AAHV4L...YOUR_BOT_TOKEN"; // আপনার বটের আসল API Token
+const BOT_TOKEN = "7963495475:AAHV4L...YOUR_BOT_TOKEN"; // Replace with your actual Bot Token
 const BOT_USERNAME = "REDPACKETBOXBOT";
-const USER_APP_CLAIM_URL = "https://t.me/REDPACKETBOXBOT/claim"; // ইউজার অ্যাপ ক্লেইম লিংক
+const USER_APP_CLAIM_URL = "https://t.me/REDPACKETBOXBOT/claim"; // Claim URL for users
 
 const firebaseConfig = {
   apiKey: "AIzaSyBObsWUTRpIESXNW_wa2MvoblEmJc27TaQ",
@@ -171,18 +171,18 @@ export const Channel_Verification_Module = {
         const validUsername = parseTelegramUsername(channelInput);
 
         if (!validUsername) {
-            UI_Helper.showToast("⚠️ সঠিক চ্যানেল ইউজারনেম (@channel) অথবা আইডি দিন!");
+            UI_Helper.showToast("⚠️ Please enter a valid channel username (@channel) or link!");
             return false;
         }
 
-        UI_Helper.showToast("🔍 চ্যানেল এবং বটের পারমিশন যাচাই করা হচ্ছে...");
+        UI_Helper.showToast("🔍 Verifying channel and bot permissions...");
 
         try {
             // A. Get Chat Details
             const chatRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getChat?chat_id=${validUsername}`);
             const chatData = await chatRes.json();
             if (!chatData.ok) {
-                throw new Error("চ্যানেল পাওয়া যায়নি! ইউজারনেম সঠিক আছে কিনা এবং বটকে চ্যানেলে এড করেছেন কিনা চেক করুন।");
+                throw new Error("Channel not found! Please ensure the username is correct and the bot has been added to your channel.");
             }
 
             const chatId = chatData.result.id.toString();
@@ -194,15 +194,15 @@ export const Channel_Verification_Module = {
             const subCount = countData.ok ? countData.result : 0;
 
             if (subCount < 500) {
-                throw new Error(`চ্যানেলে সর্বনিম্ন ৫০০ সাবস্ক্রাইবার থাকতে হবে! বর্তমান সাবস্ক্রাইবার: ${subCount}`);
+                throw new Error(`Channel must have at least 500 subscribers! Current count: ${subCount}`);
             }
 
-            // C. Channel Owner (Creator) Check Only
+            // C. Channel Owner (Creator) Check
             const userMemberRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getChatMember?chat_id=${chatId}&user_id=${user.id}`);
             const userMemberData = await userMemberRes.json();
 
             if (!userMemberData.ok || userMemberData.result.status !== 'creator') {
-                throw new Error("আপনি এই চ্যানেলের মূল ওনার (Owner) নন! শুধুমাত্র চ্যানেল Owner এড করতে পারবে।");
+                throw new Error("You are not the Owner of this channel! Only the channel Creator can connect channels.");
             }
 
             // D. Bot Admin & Permissions Check
@@ -213,12 +213,12 @@ export const Channel_Verification_Module = {
             const botMemberData = await botMemberRes.json();
 
             if (!botMemberData.ok || botMemberData.result.status !== 'administrator') {
-                throw new Error(`বট @${BOT_USERNAME} কে আপনার চ্যানেলে Administrator বানাতে হবে!`);
+                throw new Error(`Bot @${BOT_USERNAME} must be added as an Administrator in your channel!`);
             }
 
             const perms = botMemberData.result;
             if (!perms.can_post_messages || !perms.can_edit_messages || !perms.can_delete_messages) {
-                throw new Error("বটকে অবশ্যই Post, Edit, এবং Delete Messages এর পারমিশন দিতে হবে!");
+                throw new Error("Bot requires Post Messages, Edit Messages, and Delete Messages permissions!");
             }
 
             // E. Save Channel Data to Firestore
@@ -239,7 +239,7 @@ export const Channel_Verification_Module = {
                 updatedAt: serverTimestamp()
             }, { merge: true });
 
-            UI_Helper.showToast(`✅ ${chatTitle} চ্যানেল সফলভাবে ভেরিফাই ও সেভ করা হয়েছে!`);
+            UI_Helper.showToast(`✅ Channel "${chatTitle}" verified and added successfully!`);
             await Dashboard_Module.loadDashboardData();
             Router.switchView('dashboard-view');
             return true;
@@ -281,7 +281,7 @@ export const Dashboard_Module = {
         }
     },
 
-    // REQ 1: চ্যানেল এড না করা পর্যন্ত রেড প্যাকেট ফর্ম ব্লক রাখা
+    // REQ 1: Lock Red Packet creation form if no channel is verified
     checkCreateViewLock: function() {
         const createForm = document.getElementById('create-packet-form');
         const lockWarning = document.getElementById('no-channel-warning');
@@ -292,8 +292,8 @@ export const Dashboard_Module = {
                 lockWarning.style.display = 'block';
                 lockWarning.innerHTML = `
                     <div style="background: rgba(229, 57, 53, 0.15); border: 1px solid #e53935; padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 15px;">
-                        <p style="color: #ff6b6b; font-weight: bold; margin-bottom: 8px;">⚠️ কোনো চ্যানেল ভেরিফাই করা নেই!</p>
-                        <p style="font-size: 12px; color: #ccc; margin-bottom: 10px;">রেড প্যাকেট তৈরি করতে আপনাকে অবশ্যই অন্তত একটি চ্যানেল এড ও ভেরিফাই করতে হবে।</p>
+                        <p style="color: #ff6b6b; font-weight: bold; margin-bottom: 8px;">⚠️ No Verified Channel Found!</p>
+                        <p style="font-size: 12px; color: #ccc; margin-bottom: 10px;">You must add and verify at least one Telegram Channel to create Red Packets.</p>
                         <button onclick="Router.switchView('verification-view')" style="background:#FFD700; color:#000; border:none; padding:8px 16px; border-radius:8px; font-weight:bold; cursor:pointer;">+ Add Channel Now</button>
                     </div>
                 `;
@@ -304,13 +304,13 @@ export const Dashboard_Module = {
         }
     },
 
-    // REQ 3: মাল্টি-চ্যানেল ড্রপডাউন এবং প্লাস আইকন হ্যান্ডলিং
+    // REQ 3: Multi-channel dropdown and plus button handling
     renderChannelsDropdown: function() {
         const selectElem = document.getElementById('channel-dropdown');
         if (!selectElem) return;
 
         if (this.userChannels.length === 0) {
-            selectElem.innerHTML = `<option value="">No Channel Added</option>`;
+            selectElem.innerHTML = `<option value="">No Channels Added</option>`;
         } else {
             selectElem.innerHTML = this.userChannels.map(c => 
                 `<option value="${c.id}">${c.title} (${c.subscribers} subs)</option>`
@@ -318,7 +318,7 @@ export const Dashboard_Module = {
         }
     },
 
-    // REQ 4: সর্বশেষ রেড প্যাকেট কার্ড ভিজ্যুয়ালাইজেশন
+    // REQ 4: Render latest Red Packet card widget
     renderLatestPacketWidget: function() {
         const widget = document.getElementById('latest-packet-widget');
         if (!widget) return;
@@ -341,19 +341,19 @@ export const Dashboard_Module = {
 export const RedPacket_Module = {
     activePacket: null,
 
-    // প্যাকেট তৈরি
+    // Create Packet
     createPacket: async function(formData) {
         const user = Telegram_Controller.getUser();
 
         if (!Dashboard_Module.userChannels || Dashboard_Module.userChannels.length === 0) {
-            UI_Helper.showToast("❌ আগে অন্তত একটি চ্যানেল ভেরিফাই করুন!");
+            UI_Helper.showToast("❌ Please verify at least one channel first!");
             return;
         }
 
         const packetId = "rp_" + Date.now();
         const packetData = {
             id: packetId,
-            partnerId: user.id.toString(), // পার্টনার রেভিনিউ ট্র্যাকিং আইডি
+            partnerId: user.id.toString(), // Partner tracking ID
             partnerName: user.name,
             tokenName: formData.tokenName,
             amountPerUser: formData.amountPerUser,
@@ -363,10 +363,10 @@ export const RedPacket_Module = {
         };
 
         try {
-            // ১. red_packets কালেকশনে সেভ
+            // 1. Save in red_packets collection
             await setDoc(doc(db, "red_packets", packetId), packetData);
 
-            // ২. পার্টনারের প্রোফাইলে latestPacket সেভ
+            // 2. Save latestPacket in partner's profile
             await setDoc(doc(db, "admins", user.id.toString()), {
                 latestPacket: packetData
             }, { merge: true });
@@ -376,7 +376,7 @@ export const RedPacket_Module = {
 
             UI_Helper.showToast("🎉 Red Packet Created Successfully!");
             
-            // পোস্ট ও কপি ডায়ালগ মোডাল ওপেন
+            // Open post & share dialog modal
             this.openPostModal(packetData);
 
         } catch (e) {
@@ -385,34 +385,34 @@ export const RedPacket_Module = {
         }
     },
 
-    // ক্লেইম ট্র্যাকিং লিংক জেনারেট
+    // Generate claim tracking URL
     getClaimTrackingUrl: function(packetId) {
         return `${USER_APP_CLAIM_URL}?startapp=${packetId}`;
     },
 
-    // লিংক কপি
+    // Copy link to clipboard
     copyClaimLink: function(packetId) {
         const link = this.getClaimTrackingUrl(packetId || Dashboard_Module.latestPacket?.id);
         navigator.clipboard.writeText(link);
         UI_Helper.showToast("📋 Claim Link Copied to Clipboard!");
     },
 
-    // REQ 5: পোস্ট কাস্টমাইজেশন ও চ্যানেল সিলেক্ট মোডাল
+    // REQ 5: Post customization & channel selector modal
     openPostModal: function(packet = null) {
         const targetPacket = packet || Dashboard_Module.latestPacket;
         if (!targetPacket) return;
 
         this.activePacket = targetPacket;
 
-        // টোকেন নেম ও অ্যামাউন্ট পার ইউজার হাইলাইট সেট
+        // Highlight token name and amount per user
         document.getElementById('modal-token-name').innerText = targetPacket.tokenName;
         document.getElementById('modal-token-amt').innerText = targetPacket.amountPerUser;
 
-        // আকর্ষণীয় ডিফল্ট ক্যাপশন (ইউজার এডিট করতে পারবে)
+        // Engaging default caption (Editable by user)
         const defaultCaption = `🔥 Exclusive ${targetPacket.tokenName} Crypto Drop!\nClaim your free reward right now before it runs out. Fast fingers only! 👇\n\n#Crypto #RedPacket #FreeReward`;
         document.getElementById('modal-post-caption').value = defaultCaption;
 
-        // চ্যানেল সিলেক্টর রেন্ডার (১টি থাকলে অটো সিলেক্ট, একাধিক থাকলে সিলেক্ট করার সুযোগ)
+        // Channel selector render (Auto-select single, or allow selecting multiple)
         const chanContainer = document.getElementById('modal-channel-list');
         const channels = Dashboard_Module.userChannels;
 
@@ -448,7 +448,7 @@ export const RedPacket_Module = {
         document.getElementById('post-publish-modal').style.display = 'none';
     },
 
-    // টেলিগ্রাম চ্যানেলে অটোমেটিক পোস্ট পাবলিশিং
+    // Publish post to Telegram channel(s) using bot API
     publishToSelectedChannels: async function() {
         if (!this.activePacket) return;
 
@@ -457,7 +457,7 @@ export const RedPacket_Module = {
         const selectedChanIds = Array.from(checkboxes).map(cb => cb.value);
 
         if (selectedChanIds.length === 0) {
-            UI_Helper.showToast("❌ পোস্ট করার জন্য অন্তত একটি চ্যানেল সিলেক্ট করুন!");
+            UI_Helper.showToast("❌ Please select at least one channel to publish!");
             return;
         }
 
@@ -466,7 +466,7 @@ export const RedPacket_Module = {
 
         const trackingClaimUrl = this.getClaimTrackingUrl(this.activePacket.id);
 
-        // টপ ফিক্সড ইনফো + ইউজারের কাস্টমাইজ করা টেক্সট
+        // Fixed header info + user customized text
         const fullMessageText = `<b>🎁 TOKEN: ${this.activePacket.tokenName}</b>\n<b>💰 REWARD: ${this.activePacket.amountPerUser}</b>\n\n${customCaption.replace(/</g, "&lt;").replace(/>/g, "&gt;")}`;
 
         const inlineKeyboard = {
@@ -500,10 +500,10 @@ export const RedPacket_Module = {
         this.closePostModal();
 
         if (successCount > 0) {
-            UI_Helper.showToast(`🚀 ${successCount} টি চ্যানেলে সফলভাবে পোস্ট পাবলিশ হয়েছে!`);
+            UI_Helper.showToast(`🚀 Published successfully to ${successCount} channel(s)!`);
             Router.switchView('dashboard-view');
         } else {
-            UI_Helper.showToast("❌ পোস্ট করা যায়নি! বটের পারমিশন আবার চেক করুন।");
+            UI_Helper.showToast("❌ Failed to publish post! Please verify bot admin permissions.");
         }
     }
 };
@@ -517,7 +517,7 @@ window.Channel_Verification_Module = Channel_Verification_Module;
 window.addEventListener('DOMContentLoaded', async () => {
     const user = Telegram_Controller.getUser();
 
-    // DOM العناصر আপডেট
+    // Update DOM elements
     const headerName = document.getElementById('header-name');
     const profName = document.getElementById('prof-name');
     const profUsername = document.getElementById('prof-username');
@@ -532,10 +532,10 @@ window.addEventListener('DOMContentLoaded', async () => {
         if (profAvatar) profAvatar.src = user.photoUrl;
     }
 
-    // প্রাথমিক ডেটা লোড
+    // Load initial data
     await Dashboard_Module.loadDashboardData();
 
-    // ভেরিফিকেশন ফর্মে সাবমিট লিসেনার
+    // Verification form submit listener
     const verifyForm = document.getElementById('verify-form');
     if (verifyForm) {
         verifyForm.onsubmit = async (e) => {
@@ -547,7 +547,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         };
     }
 
-    // ক্রিয়েট রেড প্যাকেট ফর্মে সাবমিট লিসেনার
+    // Create Red Packet form submit listener
     const createForm = document.getElementById('create-packet-form');
     if (createForm) {
         createForm.onsubmit = async (e) => {
@@ -562,7 +562,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         };
     }
 
-    // ভিউ লক চেক ও রাউটিং
+    // View lock check and routing
     if (Dashboard_Module.userChannels.length > 0) {
         Router.switchView('dashboard-view');
     } else {
