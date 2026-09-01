@@ -20,7 +20,7 @@ export const Dashboard_Module = {
     loadDashboardData: async function() {
         const user = Telegram_Controller.getUser();
         try {
-            // ১. এডমিন প্রোফাইল থেকে চ্যানেল নেম লোড
+            // 1. Fetch channel name from admin profile
             const adminDoc = await getDoc(doc(db, "admins", user.id.toString()));
             if (adminDoc.exists()) {
                 const data = adminDoc.data();
@@ -28,7 +28,7 @@ export const Dashboard_Module = {
                 if (chanElem) chanElem.innerText = data.channelName || data.channelUsername || "My Channel";
             }
             
-            // ২. ফায়ারবেস থেকে এই এডমিনের পাবলিশ করা সমস্ত Red Packet রিড করা
+            // 2. Fetch all Red Packets published by this admin from Firestore
             const q = query(
                 collection(db, "red_packets"),
                 where("creatorTelegramId", "==", user.id.toString())
@@ -46,7 +46,7 @@ export const Dashboard_Module = {
                     packets.push({ id: docSnap.id, ...docSnap.data() });
                 });
 
-                // নতুন থেকে পুরানো ক্রমানুসারে সর্ট (Client-side Sort)
+                // Sort from newest to oldest (Client-side Sort)
                 packets.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
 
                 totalPackets = packets.length;
@@ -76,10 +76,10 @@ export const Dashboard_Module = {
                 listHTML = `<div style="text-align: center; color: #888; padding: 25px;">No Red Packets published yet.</div>`;
             }
 
-            // প্রতি ক্লেইমে ইয়ার্নিং ক্যালকুলেশন ($0.002 CPM রেট অনুযায়ী)
+            // Earnings calculation per claim based on $0.002 CPM rate
             const totalEarnings = (totalOpens * 0.002).toFixed(3);
 
-            // UI এলিমেন্টসমূহে অরিজিনাল লাইভ ডাটা বসানো
+            // Render original live data to UI elements
             const statPackets = document.getElementById('stat-total-packets');
             const statOpens = document.getElementById('stat-total-opens');
             const statEarnings = document.getElementById('stat-total-earnings');
@@ -184,7 +184,7 @@ export const Dashboard_Module = {
             UI_Helper.showToast("⏳ Publishing Red Packet to Live Database...");
 
             try {
-                // এডমিনের ভেরিফাইড চ্যানেলের ইউজারনেম রিড করা
+                // Read verified channel username of admin
                 let channelUsername = "";
                 let channelTitle = "";
                 const adminSnap = await getDoc(doc(db, "admins", user.id.toString()));
@@ -194,7 +194,7 @@ export const Dashboard_Module = {
                     channelTitle = admData.channelName || "";
                 }
 
-                // সরাসরি ফায়ারবেসের 'red_packets' কালেকশনে লাইভ সেভ
+                // Save live data directly to Firestore 'red_packets' collection
                 const docRef = await addDoc(collection(db, "red_packets"), {
                     creatorTelegramId: user.id.toString(),
                     creatorUsername: user.username,
@@ -204,20 +204,20 @@ export const Dashboard_Module = {
                     tokenName: tokenName,
                     amount: amount,
                     openLimit: openLimit,
-                    opened: 0, // সিকিউরিটি রুলসের শর্ত অনুযায়ী প্রাথমিক মান ০
+                    opened: 0,
                     binanceLink: binanceLink,
                     status: "active",
                     createdAt: serverTimestamp()
                 });
 
-                // ইউজার অ্যাপে ক্লেইম করার বট লিংক তৈরি
-                const botUsername = "RedPacketBoxBot"; // আপনার আসল টেলিগ্রাম বট ইউজারনেম
+                // Generate bot link for users to claim in app
+                const botUsername = "RedPacketBoxBot";
                 generatedPacketSlug = `https://t.me/${botUsername}?startapp=${docRef.id}`;
 
-                // কুলডাউন টাইম সেভ করা
+                // Save cooldown timestamp
                 localStorage.setItem('admin_last_publish', Date.now().toString());
 
-                // ফর্ম হাইড করে সাকসেস বক্স শো করা
+                // Hide form and display success box
                 form.style.display = 'none';
                 
                 const successBox = document.getElementById('success-link-box');
