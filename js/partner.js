@@ -14,10 +14,10 @@ import {
 
 // ==========================================
 // CONFIGURATION & CONSTANTS
-// (No sensitive BOT_TOKEN here! Keeping environment clean and secure)
 // ==========================================
 const BOT_USERNAME = "REDPACKETBOXBOT";
 const USER_APP_CLAIM_URL = "https://t.me/REDPACKETBOXBOT/claim";
+const API_BASE_URL = "https://redpacked.vercel.app"; // Vercel Absolute URL
 
 const firebaseConfig = {
   apiKey: "AIzaSyBObsWUTRpIESXNW_wa2MvoblEmJc27TaQ",
@@ -158,7 +158,6 @@ if (window.Telegram?.WebApp?.BackButton) {
 
 // ==========================================
 // 4. CHANNEL VERIFICATION
-// Executed via Secure Vercel Serverless Backend API
 // ==========================================
 export const Channel_Verification_Module = {
     verifyAndAddChannel: async function(channelInput) {
@@ -173,8 +172,7 @@ export const Channel_Verification_Module = {
         UI_Helper.showToast("🔍 Verifying channel and bot permissions...");
 
         try {
-            // Call Vercel Serverless API Route (Backend verifies with Telegram using process.env.BOT_TOKEN)
-            const response = await fetch('/api/webhook', {
+            const response = await fetch(`${API_BASE_URL}/api/webhook`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -183,6 +181,11 @@ export const Channel_Verification_Module = {
                     userId: user.id.toString()
                 })
             });
+
+            if (!response.ok) {
+                const errText = await response.text();
+                throw new Error(`Server Error (${response.status}): ${errText.slice(0, 50)}`);
+            }
 
             const data = await response.json();
 
@@ -214,7 +217,7 @@ export const Channel_Verification_Module = {
             }
         } catch (err) {
             console.error("Verification error:", err);
-            UI_Helper.showToast("❌ Network error while verifying channel!");
+            UI_Helper.showToast(`❌ ${err.message}`);
             return false;
         }
     }
@@ -401,7 +404,6 @@ export const RedPacket_Module = {
         document.getElementById('post-publish-modal').style.display = 'none';
     },
 
-    // Secure Publishing via Vercel Backend Route (/api/webhook)
     publishToSelectedChannels: async function() {
         if (!this.activePacket) return;
 
@@ -421,7 +423,7 @@ export const RedPacket_Module = {
         const fullMessageText = `<b>🎁 TOKEN: ${this.activePacket.tokenName}</b>\n<b>💰 REWARD: ${this.activePacket.amountPerUser}</b>\n\n${customCaption.replace(/</g, "&lt;").replace(/>/g, "&gt;")}`;
 
         try {
-            const res = await fetch('/api/webhook', {
+            const res = await fetch(`${API_BASE_URL}/api/webhook`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -431,6 +433,11 @@ export const RedPacket_Module = {
                     claimUrl: trackingClaimUrl
                 })
             });
+
+            if (!res.ok) {
+                const errText = await res.text();
+                throw new Error(`Server Error (${res.status}): ${errText.slice(0, 50)}`);
+            }
             
             const data = await res.json();
 
@@ -442,7 +449,7 @@ export const RedPacket_Module = {
             }
         } catch (e) {
             console.error("Publishing error:", e);
-            UI_Helper.showToast("❌ Network error while publishing post!");
+            UI_Helper.showToast(`❌ ${e.message}`);
         }
 
         if (btn) { btn.disabled = false; btn.innerText = "Publish Now"; }
