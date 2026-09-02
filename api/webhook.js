@@ -16,40 +16,18 @@ export default async function handler(req, res) {
     }
 
     if (req.method !== 'POST') {
-        return res.status(200).send('🚀 Users Verification API & Webhook Active!');
+        return res.status(200).send('🚀 Red Packet Box API & Webhook Active!');
     }
 
     const BOT_TOKEN = process.env.BOT_TOKEN;
 
     if (!BOT_TOKEN) {
-        return res.status(500).json({ error: 'BOT_TOKEN Environment Variable is missing!' });
+        return res.status(500).json({ ok: false, message: 'BOT_TOKEN Environment Variable is missing in Vercel!' });
     }
 
     const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
-    // Helper: Normalize Link/Username/ID into Telegram Username format (@channel)
-    const normalizeChannelInput = (input) => {
-        if (!input) return null;
-        let cleaned = input.trim();
-        
-        // Extract username from URL links (e.g. https://t.me/YourChannel or t.me/YourChannel)
-        if (cleaned.includes('t.me/')) {
-            const parts = cleaned.split('t.me/');
-            cleaned = parts[1].split('/')[0].split('?')[0];
-        }
-        
-        // Remove leading @ for clean processing
-        cleaned = cleaned.replace(/^@/, '');
-        
-        // If numeric ID (e.g. -100123456789)
-        if (/^-?\d+$/.test(cleaned)) {
-            return cleaned;
-        }
-        
-        return `@${cleaned}`;
-    };
-
-    // Helper: General Telegram API Fetcher
+    // Helper: Telegram API Fetcher
     const callTelegram = async (method, bodyData) => {
         try {
             const response = await fetch(`${TELEGRAM_API}/${method}`, {
@@ -63,20 +41,26 @@ export default async function handler(req, res) {
         }
     };
 
-    // Helper: Send Message to Telegram User
-    const sendMessage = async (chatId, text) => {
-        try {
-            await callTelegram('sendMessage', {
-                chat_id: chatId,
-                text: text,
-                parse_mode: 'HTML',
-                disable_web_page_preview: true
-            });
-        } catch (error) {
-            console.error('Error sending message:', error);
+    // Helper: Normalize Channel Link/Username to Telegram format (@channel or Chat ID)
+    const normalizeChannelInput = (input) => {
+        if (!input) return null;
+        let cleaned = String(input).trim();
+        
+        if (cleaned.includes('t.me/')) {
+            const parts = cleaned.split('t.me/');
+            cleaned = parts[1].split('/')[0].split('?')[0];
         }
+        
+        cleaned = cleaned.replace(/^@/, '');
+        
+        if (/^-?\d+$/.test(cleaned)) {
+            return cleaned;
+        }
+        
+        return `@${cleaned}`;
     };
 
+    // Parse Request Body Safely
     let body = req.body || {};
     if (typeof body === 'string') {
         try {
@@ -87,36 +71,35 @@ export default async function handler(req, res) {
     }
 
     // ====================================================================
-    // ১. পার্টনার প্যানেল / ওয়েব অ্যাপ (Web App) থেকে সরাসরি ভেরিফিকেশন API
+    // ১. CHANNEL VERIFICATION ROUTE (action: 'verify')
     // ====================================================================
-    if (body.action === 'verify' || body.channelId || body.channelInput || body.channelLink || body.channelUsername) {
+    if (body.action === 'verify' || (body.channelInput && body.userId)) {
         const rawInput = body.channelInput || body.channelLink || body.channelUsername || body.channelId;
         const userId = body.userId;
-        const customChannelName = body.channelName || '';
 
         if (!rawInput || !userId) {
-            return res.status(400).json({ ok: false, message: 'Missing channel identifier or userId' });
+            return res.status(400).json({ ok: false, message: 'Missing channel input or userId' });
         }
 
-        const formattedChannelId = normalizeChannelInput(rawInput);
+        const formattedTarget = normalizeChannelInput(rawInput);
 
-        // ১. Telegram API থেকে চ্যানেলের তথ্য আনা (Title, Username, Chat ID)
-        const chatInfo = await callTelegram('getChat', { chat_id: formattedChannelId });
+        // A. Telegram API: Fetch Chat Info
+        const chatInfo = await callTelegram('getChat', { chat_id: formattedTarget });
 
         if (!chatInfo.ok) {
             return res.status(200).json({
                 ok: false,
                 isVerified: false,
-                message: `⚠️ Bot is not added as Admin in channel or Channel username/link is invalid (${formattedChannelId}).`
+                message: `⚠️ Channel not found! Make sure the bot @REDPACKETBOXBOT is added as an Admin in your channel.`
             });
         }
 
         const chatData = chatInfo.result;
-        const actualChannelTitle = chatData.title || customChannelName || 'Telegram Channel';
-        const actualChannelUsername = chatData.username ? `@${chatData.username}` : formattedChannelId;
         const actualChatId = chatData.id;
+        const actualChannelTitle = chatData.title || 'Telegram Channel';
+        const actualChannelUsername = chatData.username ? `@${chatData.username}` : formattedTarget;
 
-        // ২. চ্যানেলের সাবস্ক্রাইবার সংখ্যা চেক
+        // B. Telegram API: Check Subscriber Count (Minimum 500)
         const countInfo = await callTelegram('getChatMemberCount', { chat_id: actualChatId });
         const subscriberCount = countInfo.ok ? countInfo.result : 0;
 
@@ -126,71 +109,144 @@ export default async function handler(req, res) {
                 ok: false,
                 isVerified: false,
                 subscriberCount: subscriberCount,
-                message: `❌ Minimum ${MIN_SUBSCRIBERS} subscribers required. Current: ${subscriberCount}`
+                message: `❌ Minimum ${MIN_SUBSCRIBERS} subscribers required! Current subscribers: ${subscriberCount}`
             });
         }
 
-        // ৩. ইউজার ওই চ্যানেলের Admin বা Owner কিনা তা যাচাই
-        const memberResult = await callTelegram('getChatMember', {
+        // C. Telegram API: Verify User Role in Channel (Creator / Administrator)
+        const userMember = await callTelegram('getChatMember', {
             chat_id: actualChatId,
             user_id: userId
         });
 
-        if (memberResult.ok) {
-            const status = memberResult.result.status;
-
-            if (status === 'creator' || status === 'administrator') {
-                return res.status(200).json({
-                    ok: true,
-                    isVerified: true,
-                    role: status,
-                    channelId: actualChatId,
-                    channelTitle: actualChannelTitle,
-                    channelName: actualChannelTitle,
-                    channelUsername: actualChannelUsername,
-                    subscriberCount: subscriberCount,
-                    message: `✅ Channel "${actualChannelTitle}" verified successfully!`
-                });
-            } else {
-                return res.status(200).json({
-                    ok: false,
-                    isVerified: false,
-                    message: `❌ You are not an Owner/Admin of "${actualChannelTitle}"`
-                });
-            }
-        } else {
+        if (!userMember.ok) {
             return res.status(200).json({
                 ok: false,
                 isVerified: false,
-                message: `⚠️ Could not verify Admin status for ${actualChannelTitle}.`
+                message: `⚠️ Could not verify your Admin status in "${actualChannelTitle}". Make sure the bot is an Admin!`
+            });
+        }
+
+        const userStatus = userMember.result.status;
+        if (userStatus !== 'creator' && userStatus !== 'administrator') {
+            return res.status(200).json({
+                ok: false,
+                isVerified: false,
+                message: `❌ You must be an Owner or Admin of "${actualChannelTitle}" to add it!`
+            });
+        }
+
+        // D. Telegram API: Check Bot Status & Admin Permissions
+        const botMe = await callTelegram('getMe', {});
+        if (botMe.ok) {
+            const botMember = await callTelegram('getChatMember', {
+                chat_id: actualChatId,
+                user_id: botMe.result.id
+            });
+
+            if (!botMember.ok || botMember.result.status !== 'administrator') {
+                return res.status(200).json({
+                    ok: false,
+                    isVerified: false,
+                    message: `⚠️ Bot must be added as an Administrator in "${actualChannelTitle}"!`
+                });
+            }
+
+            if (botMember.result.can_post_messages === false) {
+                return res.status(200).json({
+                    ok: false,
+                    isVerified: false,
+                    message: `⚠️ Bot needs "Post Messages" permission in "${actualChannelTitle}"!`
+                });
+            }
+        }
+
+        return res.status(200).json({
+            ok: true,
+            isVerified: true,
+            role: userStatus,
+            channelId: actualChatId.toString(),
+            channelTitle: actualChannelTitle,
+            channelUsername: actualChannelUsername,
+            subscriberCount: subscriberCount,
+            message: `✅ Channel "${actualChannelTitle}" verified successfully!`
+        });
+    }
+
+    // ====================================================================
+    // ২. CHANNEL PUBLISHING ROUTE (action: 'publish')
+    // ====================================================================
+    if (body.action === 'publish') {
+        const { channelIds, message: msgText, claimUrl } = body;
+
+        if (!channelIds || !Array.isArray(channelIds) || channelIds.length === 0) {
+            return res.status(400).json({ ok: false, message: 'No target channels selected for publishing!' });
+        }
+
+        const inlineKeyboard = claimUrl ? {
+            inline_keyboard: [
+                [{ text: "🎁 CLAIM RED PACKET NOW", url: claimUrl }]
+            ]
+        } : undefined;
+
+        let successCount = 0;
+        const errorDetails = [];
+
+        for (const chanId of channelIds) {
+            const sendRes = await callTelegram('sendMessage', {
+                chat_id: chanId,
+                text: msgText,
+                parse_mode: 'HTML',
+                disable_web_page_preview: true,
+                reply_markup: inlineKeyboard
+            });
+
+            if (sendRes.ok) {
+                successCount++;
+            } else {
+                errorDetails.push(sendRes.description || `Failed on ${chanId}`);
+            }
+        }
+
+        if (successCount > 0) {
+            return res.status(200).json({
+                ok: true,
+                successCount: successCount,
+                message: `🚀 Successfully posted Red Packet to ${successCount} channel(s)!`
+            });
+        } else {
+            return res.status(200).json({
+                ok: false,
+                successCount: 0,
+                message: `❌ Failed to publish post. Reason: ${errorDetails.join(', ')}`
             });
         }
     }
 
     // ====================================================================
-    // ২. TELEGRAM BOT WEBHOOK UPDATES (শুধুমাত্র প্রাইভেট ইনবক্সের জন্য)
+    // ৩. TELEGRAM BOT WEBHOOK UPDATES (Bot Inbox Commands)
     // ====================================================================
     const { message } = body;
 
     if (message) {
-        // 🛑 গ্রুপ, সুপারগ্রুপ বা চ্যানেলের মেসেজ ইগনোর করবে
         if (message.chat && message.chat.type !== 'private') {
             return res.status(200).json({ status: 'ignored_group_message' });
         }
 
-        // ইনবক্সে শুধুমাত্র /start কমান্ড দিলে মেসেজ পাঠাবে
-        if (message.text === '/start') {
-            await sendMessage(
-                message.chat.id,
-                `👋 <b>Welcome to Channel Verification Bot!</b>\n\n` +
-                `This bot works automatically with our <b>Partner Panel Mini App</b>.\n\n` +
-                `📌 <b>How to Use:</b>\n` +
-                `1️⃣ Add this bot as an <b>Admin</b> in your channel.\n` +
-                `2️⃣ Open our <b>Partner Panel App</b>.\n` +
-                `3️⃣ Submit your Channel Link or Username & click <b>Verify & Add Channel</b>!`
-            );
+        if (message.text && message.text.startsWith('/start')) {
+            await callTelegram('sendMessage', {
+                chat_id: message.chat.id,
+                text: `👋 <b>Welcome to Red Packet Box Bot!</b>\n\n` +
+                      `This bot works automatically with our <b>Partner Panel Mini App</b>.\n\n` +
+                      `📌 <b>How to Use:</b>\n` +
+                      `1️⃣ Add this bot as an <b>Admin</b> in your channel.\n` +
+                      `2️⃣ Open our <b>Partner Panel Web App</b>.\n` +
+                      `3️⃣ Enter your channel username to verify and publish Red Packets!`,
+                parse_mode: 'HTML',
+                disable_web_page_preview: true
+            });
         }
     }
 
     return res.status(200).json({ status: 'success' });
-}
+    }
