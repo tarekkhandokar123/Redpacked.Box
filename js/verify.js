@@ -13,9 +13,9 @@ import {
 
 // ==========================================
 // CONFIGURATION & CONSTANTS
-// (No sensitive BOT_TOKEN here! Processed via Vercel Backend API)
 // ==========================================
 const BOT_USERNAME = "REDPACKETBOXBOT";
+const API_BASE_URL = "https://redpacked.vercel.app"; // Vercel Absolute URL
 
 const firebaseConfig = {
   apiKey: "AIzaSyBObsWUTRpIESXNW_wa2MvoblEmJc27TaQ",
@@ -47,7 +47,7 @@ function notify(msg, isError = false) {
 // ==========================================
 export async function getUserVerifiedChannels(telegramUserId) {
     try {
-        const userRef = doc(db, "admin_users", telegramUserId.toString());
+        const userRef = doc(db, "admins", telegramUserId.toString());
         const snap = await getDoc(userRef);
         if (snap.exists() && snap.data().channels) {
             return snap.data().channels;
@@ -61,7 +61,6 @@ export async function getUserVerifiedChannels(telegramUserId) {
 
 // ==========================================
 // 2. STRICT CHANNEL VERIFICATION & SAVE
-// Executed via Secure Vercel Backend Route (/api/webhook)
 // ==========================================
 export async function verifyAndSaveChannel(channelUsername, telegramUserId) {
     if (!channelUsername || !telegramUserId) {
@@ -77,8 +76,7 @@ export async function verifyAndSaveChannel(channelUsername, telegramUserId) {
     try {
         notify("🔍 Verifying channel and bot permissions...");
 
-        // Call Vercel Backend Route for Secure Verification
-        const response = await fetch('/api/webhook', {
+        const response = await fetch(`${API_BASE_URL}/api/webhook`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -87,6 +85,11 @@ export async function verifyAndSaveChannel(channelUsername, telegramUserId) {
                 userId: telegramUserId.toString()
             })
         });
+
+        if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(`Server Error (${response.status}): ${errText.slice(0, 50)}`);
+        }
 
         const data = await response.json();
 
@@ -111,8 +114,8 @@ export async function verifyAndSaveChannel(channelUsername, telegramUserId) {
                 createdAt: serverTimestamp()
             }, { merge: true });
 
-            // 2. Append to user's channel list array in "admin_users"
-            const userRef = doc(db, "admin_users", telegramUserId.toString());
+            // 2. Append to user's channel list array in "admins"
+            const userRef = doc(db, "admins", telegramUserId.toString());
             await setDoc(userRef, {
                 ownerId: telegramUserId.toString(),
                 channels: arrayUnion(newChannelData),
@@ -167,7 +170,7 @@ export async function saveRedPacket(telegramUserId, packetDetails) {
     try {
         await setDoc(doc(db, "red_packets", packetId), packetData);
         
-        await setDoc(doc(db, "admin_users", telegramUserId.toString()), {
+        await setDoc(doc(db, "admins", telegramUserId.toString()), {
             latestPacket: packetData
         }, { merge: true });
 
@@ -181,7 +184,6 @@ export async function saveRedPacket(telegramUserId, packetDetails) {
 
 // ==========================================
 // 5. AUTOMATIC CHANNEL PUBLISHING
-// Executed via Secure Vercel Backend Route (/api/webhook)
 // ==========================================
 export async function publishPacketToChannels(packetData, customCaption, targetChannelIds = []) {
     if (!targetChannelIds || targetChannelIds.length === 0) {
@@ -197,7 +199,7 @@ export async function publishPacketToChannels(packetData, customCaption, targetC
     try {
         notify("🚀 Publishing post to selected channel(s)...");
 
-        const res = await fetch('/api/webhook', {
+        const res = await fetch(`${API_BASE_URL}/api/webhook`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -207,6 +209,11 @@ export async function publishPacketToChannels(packetData, customCaption, targetC
                 claimUrl: claimLink
             })
         });
+
+        if (!res.ok) {
+            const errText = await res.text();
+            throw new Error(`Server Error (${res.status}): ${errText.slice(0, 50)}`);
+        }
 
         const data = await res.json();
 
@@ -219,7 +226,7 @@ export async function publishPacketToChannels(packetData, customCaption, targetC
         }
     } catch (e) {
         console.error("Publishing error:", e);
-        notify("❌ Network error while publishing post!", true);
+        notify(`❌ ${e.message}`, true);
         return { success: false };
     }
-                }
+}
