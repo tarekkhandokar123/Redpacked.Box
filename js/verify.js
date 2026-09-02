@@ -1,5 +1,5 @@
 // ==========================================
-// FIREBASE IMPORTS (Modular SDK v11/v12)
+// FIREBASE IMPORTS (Modular SDK v12)
 // ==========================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
 import { 
@@ -7,19 +7,16 @@ import {
     doc, 
     getDoc,
     setDoc, 
-    collection,
-    query,
-    where,
-    getDocs,
     serverTimestamp,
     arrayUnion
 } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
 
-// Telegram Bot Configuration
-const BOT_TOKEN = "7963495475:AAHV4L...YOUR_BOT_TOKEN"; // Replace with your actual Bot Token
+// ==========================================
+// CONFIGURATION & CONSTANTS
+// (No sensitive BOT_TOKEN here! Processed via Vercel Backend API)
+// ==========================================
 const BOT_USERNAME = "REDPACKETBOXBOT";
 
-// Firebase Configuration
 const firebaseConfig = {
   apiKey: "AIzaSyBObsWUTRpIESXNW_wa2MvoblEmJc27TaQ",
   authDomain: "gift-box-io.firebaseapp.com",
@@ -33,18 +30,20 @@ const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 
 /**
- * Helper function to show toast messages or alerts
+ * Helper function to show notifications
  */
 function notify(msg, isError = false) {
     if (window.UI_Controller && typeof window.UI_Controller.showToast === 'function') {
         window.UI_Controller.showToast(msg);
+    } else if (window.UI_Helper && typeof window.UI_Helper.showToast === 'function') {
+        window.UI_Helper.showToast(msg);
     } else {
         alert(msg);
     }
 }
 
 // ==========================================
-// REQ 1 & 3: FETCH USER'S VERIFIED CHANNELS
+// 1. FETCH USER'S VERIFIED CHANNELS
 // ==========================================
 export async function getUserVerifiedChannels(telegramUserId) {
     try {
@@ -61,8 +60,8 @@ export async function getUserVerifiedChannels(telegramUserId) {
 }
 
 // ==========================================
-// REQ 2: STRICT CHANNEL VERIFICATION & SAVE
-// (Owner Check + Min 500 Subs + Bot Admin Perms)
+// 2. STRICT CHANNEL VERIFICATION & SAVE
+// Executed via Secure Vercel Backend Route (/api/webhook)
 // ==========================================
 export async function verifyAndSaveChannel(channelUsername, telegramUserId) {
     if (!channelUsername || !telegramUserId) {
@@ -70,7 +69,6 @@ export async function verifyAndSaveChannel(channelUsername, telegramUserId) {
         return { success: false };
     }
 
-    // Format username
     let formattedChannel = channelUsername.trim();
     if (!formattedChannel.startsWith('@') && !formattedChannel.startsWith('-100')) {
         formattedChannel = `@${formattedChannel}`;
@@ -79,80 +77,53 @@ export async function verifyAndSaveChannel(channelUsername, telegramUserId) {
     try {
         notify("🔍 Verifying channel and bot permissions...");
 
-        // A. Telegram API: Fetch basic channel information
-        const chatRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getChat?chat_id=${formattedChannel}`);
-        const chatData = await chatRes.json();
-        if (!chatData.ok) {
-            throw new Error("Channel not found! Check username accuracy and ensure the bot is added to the channel.");
+        // Call Vercel Backend Route for Secure Verification
+        const response = await fetch('/api/webhook', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'verify',
+                channelInput: formattedChannel,
+                userId: telegramUserId.toString()
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.ok && data.isVerified) {
+            const cleanDocId = data.channelId.toString().replace('-', '');
+            const newChannelData = {
+                id: data.channelId.toString(),
+                username: data.channelUsername || formattedChannel,
+                title: data.channelTitle,
+                subscribers: data.subscriberCount || 0,
+                verifiedAt: new Date().toISOString()
+            };
+
+            // 1. Save in individual "channels" collection
+            await setDoc(doc(db, "channels", cleanDocId), {
+                channelId: data.channelId.toString(),
+                channelUsername: data.channelUsername || formattedChannel,
+                channelTitle: data.channelTitle,
+                ownerTelegramId: telegramUserId.toString(),
+                subscriberCount: data.subscriberCount || 0,
+                status: "active",
+                createdAt: serverTimestamp()
+            }, { merge: true });
+
+            // 2. Append to user's channel list array in "admin_users"
+            const userRef = doc(db, "admin_users", telegramUserId.toString());
+            await setDoc(userRef, {
+                ownerId: telegramUserId.toString(),
+                channels: arrayUnion(newChannelData),
+                updatedAt: serverTimestamp()
+            }, { merge: true });
+
+            notify(`✅ Success! Channel "${data.channelTitle}" verified and added successfully.`);
+            return { success: true, channel: newChannelData };
+        } else {
+            throw new Error(data.message || "Channel verification failed!");
         }
-
-        const chatId = chatData.result.id.toString();
-        const chatTitle = chatData.result.title;
-
-        // B. Telegram API: Subscriber count check (Minimum 500 required)
-        const countRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getChatMemberCount?chat_id=${chatId}`);
-        const countData = await countRes.json();
-        const subCount = countData.ok ? countData.result : 0;
-
-        if (subCount < 500) {
-            throw new Error(`Channel must have at least 500 subscribers! Current count: ${subCount}`);
-        }
-
-        // C. Telegram API: Check if user is the Channel Owner/Creator
-        const userMemberRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getChatMember?chat_id=${chatId}&user_id=${telegramUserId}`);
-        const userMemberData = await userMemberRes.json();
-
-        if (!userMemberData.ok || userMemberData.result.status !== 'creator') {
-            throw new Error("You are not the Owner of this channel! Only the channel Creator can connect channels.");
-        }
-
-        // D. Telegram API: Check bot status & required permissions
-        const botMeRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getMe`);
-        const botMe = await botMeRes.json();
-
-        const botMemberRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getChatMember?chat_id=${chatId}&user_id=${botMe.result.id}`);
-        const botMemberData = await botMemberRes.json();
-
-        if (!botMemberData.ok || botMemberData.result.status !== 'administrator') {
-            throw new Error(`Bot @${BOT_USERNAME} must be added as an Administrator in your channel!`);
-        }
-
-        const perms = botMemberData.result;
-        if (!perms.can_post_messages || !perms.can_edit_messages || !perms.can_delete_messages) {
-            throw new Error("Bot requires Post Messages, Edit Messages, and Delete Messages permissions!");
-        }
-
-        // E. Save Channel Data to Firestore (Multi-Channel Support)
-        const cleanDocId = chatId.replace('-', '');
-        const newChannelData = {
-            id: chatId,
-            username: formattedChannel,
-            title: chatTitle,
-            subscribers: subCount,
-            verifiedAt: new Date().toISOString()
-        };
-
-        // 1. Save in individual "channels" collection
-        await setDoc(doc(db, "channels", cleanDocId), {
-            channelId: chatId,
-            channelUsername: formattedChannel,
-            channelTitle: chatTitle,
-            ownerTelegramId: telegramUserId.toString(),
-            subscriberCount: subCount,
-            status: "active",
-            createdAt: serverTimestamp()
-        }, { merge: true });
-
-        // 2. Append to user's channel list array
-        const userRef = doc(db, "admin_users", telegramUserId.toString());
-        await setDoc(userRef, {
-            ownerId: telegramUserId.toString(),
-            channels: arrayUnion(newChannelData),
-            updatedAt: serverTimestamp()
-        }, { merge: true });
-
-        notify(`✅ Success! Channel "${chatTitle}" verified and added successfully.`);
-        return { success: true, channel: newChannelData };
 
     } catch (error) {
         console.error("Verification error:", error);
@@ -162,7 +133,7 @@ export async function verifyAndSaveChannel(channelUsername, telegramUserId) {
 }
 
 // ==========================================
-// REQ 1: RED PACKET CREATION LOCK CHECK
+// 3. RED PACKET CREATION LOCK CHECK
 // ==========================================
 export async function canUserCreatePacket(telegramUserId) {
     const channels = await getUserVerifiedChannels(telegramUserId);
@@ -174,7 +145,7 @@ export async function canUserCreatePacket(telegramUserId) {
 }
 
 // ==========================================
-// REQ 4: RED PACKET CREATION & DATA SAVING
+// 4. RED PACKET CREATION & DATA SAVING
 // ==========================================
 export async function saveRedPacket(telegramUserId, packetDetails) {
     const isAllowed = await canUserCreatePacket(telegramUserId);
@@ -195,7 +166,7 @@ export async function saveRedPacket(telegramUserId, packetDetails) {
 
     try {
         await setDoc(doc(db, "red_packets", packetId), packetData);
-        // Save latest created Red Packet ID under user document
+        
         await setDoc(doc(db, "admin_users", telegramUserId.toString()), {
             latestPacket: packetData
         }, { merge: true });
@@ -209,7 +180,8 @@ export async function saveRedPacket(telegramUserId, packetDetails) {
 }
 
 // ==========================================
-// REQ 5: AUTOMATIC CHANNEL PUBLISHING (Bot API sendMessage)
+// 5. AUTOMATIC CHANNEL PUBLISHING
+// Executed via Secure Vercel Backend Route (/api/webhook)
 // ==========================================
 export async function publishPacketToChannels(packetData, customCaption, targetChannelIds = []) {
     if (!targetChannelIds || targetChannelIds.length === 0) {
@@ -219,41 +191,35 @@ export async function publishPacketToChannels(packetData, customCaption, targetC
 
     const claimLink = `https://t.me/${BOT_USERNAME}/claim?startapp=${packetData.id}`;
     
-    // Catchy Crypto Title & Post Template
-    const formattedText = `<b>🔥 EXCLUSIVE CRYPTO RED PACKET DROP 🔥</b>\n\n<b>🎁 TOKEN:</b> ${packetData.tokenName}\n<b>💰 REWARD PER USER:</b> ${packetData.amountPerUser}\n\n${customCaption}`;
+    const sanitizedCaption = (customCaption || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const formattedText = `<b>🔥 EXCLUSIVE CRYPTO RED PACKET DROP 🔥</b>\n\n<b>🎁 TOKEN:</b> ${packetData.tokenName}\n<b>💰 REWARD PER USER:</b> ${packetData.amountPerUser}\n\n${sanitizedCaption}`;
 
-    const inlineKeyboard = {
-        inline_keyboard: [
-            [{ text: "🎁 CLAIM RED PACKET NOW", url: claimLink }]
-        ]
-    };
+    try {
+        notify("🚀 Publishing post to selected channel(s)...");
 
-    let publishedCount = 0;
+        const res = await fetch('/api/webhook', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'publish',
+                channelIds: targetChannelIds,
+                message: formattedText,
+                claimUrl: claimLink
+            })
+        });
 
-    for (const chanId of targetChannelIds) {
-        try {
-            const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    chat_id: chanId,
-                    text: formattedText,
-                    parse_mode: 'HTML',
-                    reply_markup: inlineKeyboard
-                })
-            });
-            const data = await res.json();
-            if (data.ok) publishedCount++;
-        } catch (e) {
-            console.error(`Failed to post on channel ${chanId}:`, e);
+        const data = await res.json();
+
+        if (data.ok && data.successCount > 0) {
+            notify(`🚀 Published successfully to ${data.successCount} channel(s)!`);
+            return { success: true, count: data.successCount };
+        } else {
+            notify(data.message || "❌ Failed to publish post! Check bot admin permissions.", true);
+            return { success: false };
         }
-    }
-
-    if (publishedCount > 0) {
-        notify(`🚀 Published successfully to ${publishedCount} channel(s)!`);
-        return { success: true, count: publishedCount };
-    } else {
-        notify("❌ Failed to publish post! Please check bot admin permissions.", true);
+    } catch (e) {
+        console.error("Publishing error:", e);
+        notify("❌ Network error while publishing post!", true);
         return { success: false };
     }
-}
+                }
