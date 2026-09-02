@@ -8,21 +8,16 @@ import {
     doc, 
     getDoc, 
     setDoc, 
-    updateDoc, 
     arrayUnion,
-    collection,
-    query,
-    where,
-    getDocs,
     serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
 
 // ==========================================
 // CONFIGURATION & CONSTANTS
+// (No sensitive BOT_TOKEN here! Keeping environment clean and secure)
 // ==========================================
-const BOT_TOKEN = "7963495475:AAHV4L...YOUR_BOT_TOKEN"; // Replace with your actual Bot Token
 const BOT_USERNAME = "REDPACKETBOXBOT";
-const USER_APP_CLAIM_URL = "https://t.me/REDPACKETBOXBOT/claim"; // Claim URL for users
+const USER_APP_CLAIM_URL = "https://t.me/REDPACKETBOXBOT/claim";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBObsWUTRpIESXNW_wa2MvoblEmJc27TaQ",
@@ -162,8 +157,8 @@ if (window.Telegram?.WebApp?.BackButton) {
 }
 
 // ==========================================
-// 4. CHANNEL VERIFICATION (REQ 2 & REQ 3)
-// Owner Check + Min 500 Subs + Bot Admin Perms
+// 4. CHANNEL VERIFICATION
+// Executed via Secure Vercel Serverless Backend API
 // ==========================================
 export const Channel_Verification_Module = {
     verifyAndAddChannel: async function(channelInput) {
@@ -178,82 +173,55 @@ export const Channel_Verification_Module = {
         UI_Helper.showToast("🔍 Verifying channel and bot permissions...");
 
         try {
-            // A. Get Chat Details
-            const chatRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getChat?chat_id=${validUsername}`);
-            const chatData = await chatRes.json();
-            if (!chatData.ok) {
-                throw new Error("Channel not found! Please ensure the username is correct and the bot has been added to your channel.");
+            // Call Vercel Serverless API Route (Backend verifies with Telegram using process.env.BOT_TOKEN)
+            const response = await fetch('/api/webhook', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'verify',
+                    channelInput: validUsername,
+                    userId: user.id.toString()
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.ok && data.isVerified) {
+                const newChanObj = {
+                    id: data.channelId,
+                    username: data.channelUsername,
+                    title: data.channelTitle,
+                    subscribers: data.subscriberCount || 0,
+                    addedAt: new Date().toISOString()
+                };
+
+                const adminRef = doc(db, "admins", user.id.toString());
+                await setDoc(adminRef, {
+                    telegramUserId: user.id.toString(),
+                    username: user.username,
+                    name: user.name,
+                    channels: arrayUnion(newChanObj),
+                    updatedAt: serverTimestamp()
+                }, { merge: true });
+
+                UI_Helper.showToast(`✅ Channel "${data.channelTitle}" verified successfully!`);
+                await Dashboard_Module.loadDashboardData();
+                Router.switchView('dashboard-view');
+                return true;
+            } else {
+                UI_Helper.showToast(data.message || "❌ Channel verification failed!");
+                return false;
             }
-
-            const chatId = chatData.result.id.toString();
-            const chatTitle = chatData.result.title;
-
-            // B. Minimum 500 Subscribers Check
-            const countRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getChatMemberCount?chat_id=${chatId}`);
-            const countData = await countRes.json();
-            const subCount = countData.ok ? countData.result : 0;
-
-            if (subCount < 500) {
-                throw new Error(`Channel must have at least 500 subscribers! Current count: ${subCount}`);
-            }
-
-            // C. Channel Owner (Creator) Check
-            const userMemberRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getChatMember?chat_id=${chatId}&user_id=${user.id}`);
-            const userMemberData = await userMemberRes.json();
-
-            if (!userMemberData.ok || userMemberData.result.status !== 'creator') {
-                throw new Error("You are not the Owner of this channel! Only the channel Creator can connect channels.");
-            }
-
-            // D. Bot Admin & Permissions Check
-            const botMeRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getMe`);
-            const botMe = await botMeRes.json();
-
-            const botMemberRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getChatMember?chat_id=${chatId}&user_id=${botMe.result.id}`);
-            const botMemberData = await botMemberRes.json();
-
-            if (!botMemberData.ok || botMemberData.result.status !== 'administrator') {
-                throw new Error(`Bot @${BOT_USERNAME} must be added as an Administrator in your channel!`);
-            }
-
-            const perms = botMemberData.result;
-            if (!perms.can_post_messages || !perms.can_edit_messages || !perms.can_delete_messages) {
-                throw new Error("Bot requires Post Messages, Edit Messages, and Delete Messages permissions!");
-            }
-
-            // E. Save Channel Data to Firestore
-            const newChanObj = {
-                id: chatId,
-                username: validUsername,
-                title: chatTitle,
-                subscribers: subCount,
-                addedAt: new Date().toISOString()
-            };
-
-            const adminRef = doc(db, "admins", user.id.toString());
-            await setDoc(adminRef, {
-                telegramUserId: user.id.toString(),
-                username: user.username,
-                name: user.name,
-                channels: arrayUnion(newChanObj),
-                updatedAt: serverTimestamp()
-            }, { merge: true });
-
-            UI_Helper.showToast(`✅ Channel "${chatTitle}" verified and added successfully!`);
-            await Dashboard_Module.loadDashboardData();
-            Router.switchView('dashboard-view');
-            return true;
-
         } catch (err) {
             console.error("Verification error:", err);
-            UI_Helper.showToast(`❌ ${err.message}`);
+            UI_Helper.showToast("❌ Network error while verifying channel!");
             return false;
         }
     }
 };
 
 // ==========================================
-// 5. DASHBOARD & LOCK MANAGEMENT (REQ 1 & REQ 4)
+// 5. DASHBOARD & LOCK MANAGEMENT
 // ==========================================
 export const Dashboard_Module = {
     userChannels: [],
@@ -281,7 +249,6 @@ export const Dashboard_Module = {
         }
     },
 
-    // REQ 1: Lock Red Packet creation form if no channel is verified
     checkCreateViewLock: function() {
         const createForm = document.getElementById('create-packet-form');
         const lockWarning = document.getElementById('no-channel-warning');
@@ -304,7 +271,6 @@ export const Dashboard_Module = {
         }
     },
 
-    // REQ 3: Multi-channel dropdown and plus button handling
     renderChannelsDropdown: function() {
         const selectElem = document.getElementById('channel-dropdown');
         if (!selectElem) return;
@@ -318,7 +284,6 @@ export const Dashboard_Module = {
         }
     },
 
-    // REQ 4: Render latest Red Packet card widget
     renderLatestPacketWidget: function() {
         const widget = document.getElementById('latest-packet-widget');
         if (!widget) return;
@@ -335,13 +300,11 @@ export const Dashboard_Module = {
 };
 
 // ==========================================
-// 6. RED PACKET CREATION & PUBLISHING (REQ 5)
-// Tracking URL & Interactive Modal
+// 6. RED PACKET CREATION & SECURE PUBLISHING
 // ==========================================
 export const RedPacket_Module = {
     activePacket: null,
 
-    // Create Packet
     createPacket: async function(formData) {
         const user = Telegram_Controller.getUser();
 
@@ -353,7 +316,7 @@ export const RedPacket_Module = {
         const packetId = "rp_" + Date.now();
         const packetData = {
             id: packetId,
-            partnerId: user.id.toString(), // Partner tracking ID
+            partnerId: user.id.toString(),
             partnerName: user.name,
             tokenName: formData.tokenName,
             amountPerUser: formData.amountPerUser,
@@ -363,10 +326,8 @@ export const RedPacket_Module = {
         };
 
         try {
-            // 1. Save in red_packets collection
             await setDoc(doc(db, "red_packets", packetId), packetData);
 
-            // 2. Save latestPacket in partner's profile
             await setDoc(doc(db, "admins", user.id.toString()), {
                 latestPacket: packetData
             }, { merge: true });
@@ -375,8 +336,6 @@ export const RedPacket_Module = {
             Dashboard_Module.renderLatestPacketWidget();
 
             UI_Helper.showToast("🎉 Red Packet Created Successfully!");
-            
-            // Open post & share dialog modal
             this.openPostModal(packetData);
 
         } catch (e) {
@@ -385,34 +344,28 @@ export const RedPacket_Module = {
         }
     },
 
-    // Generate claim tracking URL
     getClaimTrackingUrl: function(packetId) {
         return `${USER_APP_CLAIM_URL}?startapp=${packetId}`;
     },
 
-    // Copy link to clipboard
     copyClaimLink: function(packetId) {
         const link = this.getClaimTrackingUrl(packetId || Dashboard_Module.latestPacket?.id);
         navigator.clipboard.writeText(link);
         UI_Helper.showToast("📋 Claim Link Copied to Clipboard!");
     },
 
-    // REQ 5: Post customization & channel selector modal
     openPostModal: function(packet = null) {
         const targetPacket = packet || Dashboard_Module.latestPacket;
         if (!targetPacket) return;
 
         this.activePacket = targetPacket;
 
-        // Highlight token name and amount per user
         document.getElementById('modal-token-name').innerText = targetPacket.tokenName;
         document.getElementById('modal-token-amt').innerText = targetPacket.amountPerUser;
 
-        // Engaging default caption (Editable by user)
         const defaultCaption = `🔥 Exclusive ${targetPacket.tokenName} Crypto Drop!\nClaim your free reward right now before it runs out. Fast fingers only! 👇\n\n#Crypto #RedPacket #FreeReward`;
         document.getElementById('modal-post-caption').value = defaultCaption;
 
-        // Channel selector render (Auto-select single, or allow selecting multiple)
         const chanContainer = document.getElementById('modal-channel-list');
         const channels = Dashboard_Module.userChannels;
 
@@ -448,7 +401,7 @@ export const RedPacket_Module = {
         document.getElementById('post-publish-modal').style.display = 'none';
     },
 
-    // Publish post to Telegram channel(s) using bot API
+    // Secure Publishing via Vercel Backend Route (/api/webhook)
     publishToSelectedChannels: async function() {
         if (!this.activePacket) return;
 
@@ -465,46 +418,35 @@ export const RedPacket_Module = {
         if (btn) { btn.disabled = true; btn.innerText = "Publishing..."; }
 
         const trackingClaimUrl = this.getClaimTrackingUrl(this.activePacket.id);
-
-        // Fixed header info + user customized text
         const fullMessageText = `<b>🎁 TOKEN: ${this.activePacket.tokenName}</b>\n<b>💰 REWARD: ${this.activePacket.amountPerUser}</b>\n\n${customCaption.replace(/</g, "&lt;").replace(/>/g, "&gt;")}`;
 
-        const inlineKeyboard = {
-            inline_keyboard: [
-                [{ text: "🎁 CLAIM RED PACKET", url: trackingClaimUrl }]
-            ]
-        };
+        try {
+            const res = await fetch('/api/webhook', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'publish',
+                    channelIds: selectedChanIds,
+                    message: fullMessageText,
+                    claimUrl: trackingClaimUrl
+                })
+            });
+            
+            const data = await res.json();
 
-        let successCount = 0;
-
-        for (const chanId of selectedChanIds) {
-            try {
-                const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        chat_id: chanId,
-                        text: fullMessageText,
-                        parse_mode: 'HTML',
-                        reply_markup: inlineKeyboard
-                    })
-                });
-                const data = await res.json();
-                if (data.ok) successCount++;
-            } catch (e) {
-                console.error("Error posting to channel " + chanId, e);
+            if (data.ok && data.successCount > 0) {
+                UI_Helper.showToast(`🚀 Published successfully to ${data.successCount} channel(s)!`);
+                Router.switchView('dashboard-view');
+            } else {
+                UI_Helper.showToast(data.message || "❌ Failed to publish post! Check bot permissions.");
             }
+        } catch (e) {
+            console.error("Publishing error:", e);
+            UI_Helper.showToast("❌ Network error while publishing post!");
         }
 
         if (btn) { btn.disabled = false; btn.innerText = "Publish Now"; }
         this.closePostModal();
-
-        if (successCount > 0) {
-            UI_Helper.showToast(`🚀 Published successfully to ${successCount} channel(s)!`);
-            Router.switchView('dashboard-view');
-        } else {
-            UI_Helper.showToast("❌ Failed to publish post! Please verify bot admin permissions.");
-        }
     }
 };
 
@@ -517,7 +459,6 @@ window.Channel_Verification_Module = Channel_Verification_Module;
 window.addEventListener('DOMContentLoaded', async () => {
     const user = Telegram_Controller.getUser();
 
-    // Update DOM elements
     const headerName = document.getElementById('header-name');
     const profName = document.getElementById('prof-name');
     const profUsername = document.getElementById('prof-username');
@@ -532,10 +473,8 @@ window.addEventListener('DOMContentLoaded', async () => {
         if (profAvatar) profAvatar.src = user.photoUrl;
     }
 
-    // Load initial data
     await Dashboard_Module.loadDashboardData();
 
-    // Verification form submit listener
     const verifyForm = document.getElementById('verify-form');
     if (verifyForm) {
         verifyForm.onsubmit = async (e) => {
@@ -547,7 +486,6 @@ window.addEventListener('DOMContentLoaded', async () => {
         };
     }
 
-    // Create Red Packet form submit listener
     const createForm = document.getElementById('create-packet-form');
     if (createForm) {
         createForm.onsubmit = async (e) => {
@@ -562,7 +500,6 @@ window.addEventListener('DOMContentLoaded', async () => {
         };
     }
 
-    // View lock check and routing
     if (Dashboard_Module.userChannels.length > 0) {
         Router.switchView('dashboard-view');
     } else {
