@@ -12,8 +12,6 @@ import {
     setDoc, 
     collection, 
     getDocs, 
-    query, 
-    where,
     serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
 
@@ -55,7 +53,7 @@ export const User_Controller = {
 };
 
 // ==========================================
-// 3. UI / ANIMATION CONTROLLER
+// 3. UI CONTROLLER
 // ==========================================
 export const UI_Controller = {
     showToast: function(message) {
@@ -112,7 +110,7 @@ export const UI_Controller = {
 window.UI_Controller = UI_Controller;
 
 // ==========================================
-// 4. ADS CONTROLLER (RichAds + Waterfall)
+// 4. ADS CONTROLLER
 // ==========================================
 import { AdsManager } from './ads-manager.js';
 
@@ -123,7 +121,7 @@ export const Ads_Controller = {
 };
 
 // ==========================================
-// 5. PACKET LOGIC CONTROLLER
+// 5. PACKET LOGIC CONTROLLER (ACTIVE PACKET FILTER FIX)
 // ==========================================
 export const Packet_Controller = {
     currentPacketData: null,
@@ -140,7 +138,6 @@ export const Packet_Controller = {
         if (viewSingle) viewSingle.style.display = 'block';
         if (viewList) viewList.style.display = 'none';
 
-        // Telegram Native Back Button শো করা
         if (User_Controller.tg?.BackButton) {
             User_Controller.tg.BackButton.show();
             User_Controller.tg.BackButton.offClick(this.handleBackButtonClick);
@@ -164,7 +161,6 @@ export const Packet_Controller = {
             const channelName = data.channelTitle || data.channelName || data.channelUsername || "Official Drop";
             const tokenDetails = `${data.tokenName || 'USDT'} — ${limitCount} Accounts`;
 
-            // Update UI
             const chanElem = document.getElementById('rp-channel-name');
             const tokenElem = document.getElementById('rp-token-info');
             if (chanElem) chanElem.innerText = channelName;
@@ -177,6 +173,10 @@ export const Packet_Controller = {
                 openBtn.disabled = true;
                 openBtn.innerHTML = `<span>CLAIM LIMIT REACHED</span>`;
                 openBtn.style.opacity = "0.6";
+            } else if (openBtn) {
+                openBtn.disabled = false;
+                openBtn.innerHTML = `<span>OPEN RED PACKET</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
+                openBtn.style.opacity = "1";
             }
 
         } catch (e) {
@@ -216,10 +216,10 @@ export const Packet_Controller = {
                 if (giftBoxBtn) giftBoxBtn.classList.add('shake');
                 UI_Controller.showToast("🎬 Loading rewarded ad...");
 
-                // ২. Adsgram এড রান করা (Block ID: 431323)
+                // ২. Dynamic Waterfall Ad প্লে করা
                 await Ads_Controller.playAd();
 
-                // ৩. ফায়ারবেসে ক্লেইম রেকর্ড ও কাউন্ট আপডেট করা
+                // ৩. ক্লেইম রেকর্ড তৈরি ও কাউন্ট বাড়ানো
                 await setDoc(doc(db, "claim_records", claimRecordId), {
                     redPacketId: this.currentPacketId,
                     telegramUserId: user.id,
@@ -232,13 +232,13 @@ export const Packet_Controller = {
                     opened: increment(1)
                 });
 
-                // ৪. লোকাল স্টেট ও ইউজার ইন্টারফেস আপডেট
+                // ৪. আপডেট UI
                 if (giftBoxBtn) giftBoxBtn.classList.remove('shake');
                 this.currentPacketData.opened = openedCount + 1;
                 UI_Controller.updateProgressBar(this.currentPacketData.opened, limitCount);
                 UI_Controller.showToast("✅ Ad completed! Opening Binance Link...");
 
-                // ৫. ইউজারকে সরাসরি গোপন বিন্যান্স লিংকে রিডাইরেক্ট করা
+                // ৫. বিন্যান্স লিংকে রিডাইরেক্ট
                 const binanceUrl = this.currentPacketData.binanceLink;
                 if (binanceUrl) {
                     if (User_Controller.tg?.openLink) {
@@ -252,7 +252,7 @@ export const Packet_Controller = {
 
             } catch (error) {
                 if (giftBoxBtn) giftBoxBtn.classList.remove('shake');
-                UI_Controller.showToast(error === "Ad skipped or failed." ? "⚠️ You must watch the complete ad to claim!" : "❌ Error processing claim.");
+                UI_Controller.showToast(error.message === "Ad skipped or failed." ? "⚠️ You must watch the complete ad to claim!" : "❌ Error processing claim.");
             }
         };
 
@@ -260,6 +260,7 @@ export const Packet_Controller = {
         if (giftBoxBtn) giftBoxBtn.onclick = handleOpenAction;
     },
 
+    // সক্রিয় ও নতুন রেড প্যাকেট দেখানোর জন্য ডায়নামিক ফিল্টার
     loadPacketList: async function() {
         const viewSingle = document.getElementById('view-single');
         const viewList = document.getElementById('view-list');
@@ -268,7 +269,6 @@ export const Packet_Controller = {
         if (viewSingle) viewSingle.style.display = 'none';
         if (viewList) viewList.style.display = 'block';
 
-        // Telegram Native Back Button হাইড করা (লিস্ট ভিউতে থাকলে দরকার নেই)
         if (User_Controller.tg?.BackButton) {
             User_Controller.tg.BackButton.hide();
             User_Controller.tg.BackButton.offClick(this.handleBackButtonClick);
@@ -277,32 +277,50 @@ export const Packet_Controller = {
         if (!container) return;
 
         try {
-            const q = query(collection(db, "red_packets"), where("status", "==", "active"));
-            const snap = await getDocs(q);
+            const snap = await getDocs(collection(db, "red_packets"));
 
             if (snap.empty) {
-                container.innerHTML = `<div style="text-align:center; padding: 20px; color:#888;">No active Red Packets right now.</div>`;
+                container.innerHTML = `<div style="text-align:center; padding: 25px; color:#888;">No active Red Packets right now.</div>`;
                 return;
             }
 
             let html = "";
+            let activeCount = 0;
+
             snap.forEach((docSnap) => {
                 const data = docSnap.data();
                 const id = docSnap.id;
+
+                const limitCount = data.openLimit || 0;
+                const openedCount = data.opened || 0;
+                const isInactiveStatus = data.status && data.status !== "active";
+
+                // যেগুলো শেষ হয়ে গেছে বা ইনঅ্যাক্টিভ সেগুলো হাইড হবে
+                if (openedCount >= limitCount || isInactiveStatus) {
+                    return;
+                }
+
+                activeCount++;
                 html += `
-                    <div class="packet-item-card" onclick="Packet_Controller.loadSpecificPacket('${id}')" style="background: rgba(255,255,255,0.05); padding:14px; margin-bottom:10px; border-radius:12px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                    <div class="packet-item-card" onclick="Packet_Controller.loadSpecificPacket('${id}')">
                         <div class="packet-info">
-                            <h4 style="margin:0; color:var(--gold); font-size:15px;">💎 ${data.tokenName || 'USDT'} Red Packet</h4>
-                            <p style="margin:4px 0 0 0; color:#aaa; font-size:12px;">Channel: ${data.channelTitle || data.channelName || 'VIP Channel'}</p>
+                            <h4>💎 ${data.tokenName || 'USDT'} Red Packet</h4>
+                            <p>Channel: ${data.channelTitle || data.channelName || 'VIP Channel'}</p>
                         </div>
-                        <span style="color: #4CAF50; font-weight: 700; font-size: 13px;">${data.opened || 0}/${data.openLimit || 0}</span>
+                        <span style="color: #4CAF50; font-weight: 700; font-size: 13px;">${openedCount}/${limitCount}</span>
                     </div>
                 `;
             });
-            container.innerHTML = html;
+
+            if (activeCount === 0) {
+                container.innerHTML = `<div style="text-align:center; padding: 25px; color:#888;">All Red Packets have been claimed! Check back later.</div>`;
+            } else {
+                container.innerHTML = html;
+            }
+
         } catch (e) {
             console.error("Error loading active packets list:", e);
-            container.innerHTML = `<div style="text-align:center; padding: 20px; color:#e53935;">Failed to load packets list.</div>`;
+            container.innerHTML = `<div style="text-align:center; padding: 20px; color:#e53935;">Failed to load active packets list.</div>`;
         }
     }
 };
@@ -313,11 +331,9 @@ window.Packet_Controller = Packet_Controller;
 // 6. APPLICATION BOOTSTRAP
 // ==========================================
 window.addEventListener('DOMContentLoaded', () => {
-    // 1. User Initialization
     const user = User_Controller.getUserInfo();
     UI_Controller.setupProfile(user);
 
-    // 2. Start Parameter / Route Checking
     const startParam = User_Controller.tg?.initDataUnsafe?.start_param;
 
     if (startParam) {
@@ -326,7 +342,6 @@ window.addEventListener('DOMContentLoaded', () => {
         Packet_Controller.loadPacketList();
     }
 
-    // 3. Partner / Publish Button Binding
     const publishBtn = document.getElementById('publish-btn') || document.querySelector('.publish-btn');
     if (publishBtn) {
         publishBtn.addEventListener('click', () => {
@@ -334,7 +349,6 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 4. Share Button Bindings
     const shareBtn = document.getElementById('share-btn');
     if (shareBtn) {
         shareBtn.addEventListener('click', () => {
@@ -351,7 +365,6 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 5. Hide Splash & Signal Ready
     if (User_Controller.tg?.ready) User_Controller.tg.ready();
     UI_Controller.hideSplash();
 });
