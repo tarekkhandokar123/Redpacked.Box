@@ -1,20 +1,16 @@
-// ==========================================
-// Dynamic Waterfall Ad Controller
-// Priority Sequence: Adsgram → Adexium/Tads → Monetag
-// User MUST view an ad successfully to collect Red Packet
-// ==========================================
 import { db } from './app.js';
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
 
 export const AdsManager = {
     config: {
         network1Enabled: true,
-        adsgramBlockId: "431323",
+        adexiumZoneId: "9f52803f-59b8-42ff-b041-fe7a7863ea7c",
+
         network2Enabled: true,
-        adexiumZoneId: "11907",
-        tadsadsKey: "1751",
+        tadsKeys: ["11905", "11906", "11907"],
+
         network3Enabled: true,
-        monetagId: "9669121"
+        monetagFnName: "show_11714437"
     },
 
     async fetchConfig() {
@@ -22,7 +18,13 @@ export const AdsManager = {
             const configRef = doc(db, "app_config", "ad_settings");
             const snap = await getDoc(configRef);
             if (snap.exists()) {
-                this.config = { ...this.config, ...snap.data() };
+                const data = snap.data();
+                this.config = { ...this.config, ...data };
+                
+                // Firestore থেকে যদি tadsKeys স্ট্রিং হিসেবে আসে তা অ্যারেতে কনভার্ট করা
+                if (typeof this.config.tadsKeys === 'string') {
+                    this.config.tadsKeys = this.config.tadsKeys.split(',').map(k => k.trim());
+                }
             }
         } catch (e) {
             console.warn("Could not load dynamic ad config, using defaults:", e);
@@ -32,65 +34,49 @@ export const AdsManager = {
     async playAd() {
         await this.fetchConfig();
 
-        // 1. Try Network 1: Adsgram
+        // 1. Try Adexium
         if (this.config.network1Enabled) {
-            const res1 = await this.tryAdsgram();
-            if (res1) return true;
+            const resAdexium = await this.tryAdexium();
+            if (resAdexium) return true;
         }
 
-        // 2. Try Network 2: Adexium / Tads
+        // 2. Try Tadsads (3টি ID ক্রমান্বয়ে ট্রাই করবে)
         if (this.config.network2Enabled) {
-            const res2 = await this.tryAdexium();
-            if (res2) return true;
+            const keys = Array.isArray(this.config.tadsKeys) && this.config.tadsKeys.length > 0
+                ? this.config.tadsKeys 
+                : ["11905", "11906", "11907"];
 
-            const resTads = await this.tryTads();
-            if (resTads) return true;
-        }
-
-        // 3. Try Network 3: Monetag
-        if (this.config.network3Enabled) {
-            const res3 = await this.tryMonetag();
-            if (res3) return true;
-        }
-
-        throw new Error("Ad skipped or failed.");
-    },
-
-    // ----- Ad Network 1: Adsgram -----
-    tryAdsgram() {
-        return new Promise((resolve) => {
-            const blockId = this.config.adsgramBlockId || "431323";
-            if (window.Adsgram) {
-                try {
-                    const AdController = window.Adsgram.init({ blockId: blockId });
-                    AdController.show()
-                        .then((result) => {
-                            if (result && result.done) resolve(true);
-                            else resolve(false);
-                        })
-                        .catch(() => resolve(false));
-                } catch (e) {
-                    resolve(false);
-                }
-            } else {
-                resolve(false);
+            for (const key of keys) {
+                const resTads = await this.tryTadsSingleKey(key);
+                if (resTads) return true; // একটি আইডি কাজ করলে এখান থেকেই Success নিয়ে বের হয়ে যাবে
             }
-        });
+        }
+
+        // 3. Try Monetag
+        if (this.config.network3Enabled) {
+            const resMonetag = await this.tryMonetag();
+            if (resMonetag) return true;
+        }
+
+        throw new Error("No ads available or ad failed to display.");
     },
 
-    // ----- Ad Network 2: Adexium -----
+    // ----- 1. Adexium -----
     tryAdexium() {
         return new Promise((resolve) => {
             if (typeof AdexiumWidget !== "undefined") {
                 try {
-                    const zoneId = this.config.adexiumZoneId || "11907";
+                    const zoneId = this.config.adexiumZoneId || "9f52803f-59b8-42ff-b041-fe7a7863ea7c";
                     const widget = new AdexiumWidget({
                         wid: zoneId,
                         adFormat: "interstitial"
                     });
                     widget.autoMode();
-                    setTimeout(() => resolve(true), 3500);
+                    
+                    // Adexium লোড হওয়ার জন্য ৩ সেকেন্ড সময় দিয়ে Resolve করা
+                    setTimeout(() => resolve(true), 3000);
                 } catch (e) {
+                    console.warn("Adexium failed:", e);
                     resolve(false);
                 }
             } else {
@@ -99,41 +85,77 @@ export const AdsManager = {
         });
     },
 
-    // ----- Ad Network 2 Fallback: Tads -----
-    tryTads() {
+    // ----- 2. Tadsads Single Key Attempt -----
+    tryTadsSingleKey(key) {
         return new Promise((resolve) => {
-            if (typeof window.tads !== "undefined") {
-                try {
-                    const key = this.config.tadsadsKey || "1751";
-                    const adController = window.tads.init({
-                        widgetId: key,
-                        type: "fullscreen",
-                        onShowReward: () => resolve(true),
-                        onAdsNotFound: () => resolve(false)
-                    });
-                    if (adController && typeof adController.showAd === "function") {
-                        adController.showAd().catch(() => resolve(false));
-                    } else {
-                        setTimeout(() => resolve(false), 2500);
+            if (typeof window.tads === "undefined") {
+                return resolve(false);
+            }
+
+            try {
+                let isResolved = false;
+                let fallbackTimer = null;
+
+                const finish = (status) => {
+                    if (!isResolved) {
+                        isResolved = true;
+                        if (fallbackTimer) clearTimeout(fallbackTimer);
+                        resolve(status);
                     }
-                } catch (e) {
-                    resolve(false);
+                };
+
+                // যদি SDK কোন কারণে সাড়া না দেয় (যেমন নেটওয়ার্ক ব্লক), তবেই কেবল ১০ সেকেন্ড পর ফেল করবে
+                fallbackTimer = setTimeout(() => {
+                    finish(false);
+                }, 10000);
+
+                const adController = window.tads.init({
+                    widgetId: String(key),
+                    type: "fullscreen",
+                    onShowReward: () => {
+                        finish(true); // ইউজার অ্যাড শেষ পর্যন্ত দেখলে True হবে
+                    },
+                    onAdsNotFound: () => {
+                        finish(false); // অ্যাড না পাওয়া গেলে সঙ্গে সঙ্গে পরের ID ট্রাই করবে
+                    },
+                    onError: () => {
+                        finish(false);
+                    },
+                    onClose: () => {
+                        // রিওয়ার্ড ছাড়া কেটে দিলে ১ সেকেন্ড পর ফেল ধরা হবে
+                        setTimeout(() => finish(false), 1000);
+                    }
+                });
+
+                if (adController && typeof adController.showAd === "function") {
+                    adController.showAd().catch((err) => {
+                        console.warn(`Tads showAd error for key ${key}:`, err);
+                        finish(false);
+                    });
+                } else {
+                    finish(false);
                 }
-            } else {
+
+            } catch (e) {
+                console.warn(`Tads Exception Key ${key}:`, e);
                 resolve(false);
             }
         });
     },
 
-    // ----- Ad Network 3: Monetag -----
+    // ----- 3. Monetag -----
     tryMonetag() {
         return new Promise((resolve) => {
-            const monetagFn = window.show_9669121 || window.show_11714437;
+            const fnName = this.config.monetagFnName || "show_11714437";
+            const monetagFn = window[fnName] || window.show_11714437;
+
             if (typeof monetagFn === "function") {
                 monetagFn()
                     .then(() => resolve(true))
-                    .catch(() => resolve(false));
-                setTimeout(() => resolve(false), 6000);
+                    .catch((err) => {
+                        console.warn("Monetag view failed or skipped:", err);
+                        resolve(false);
+                    });
             } else {
                 resolve(false);
             }
