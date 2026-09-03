@@ -21,7 +21,6 @@ export const AdsManager = {
                 const data = snap.data();
                 this.config = { ...this.config, ...data };
                 
-                // Firestore থেকে যদি tadsKeys স্ট্রিং হিসেবে আসে তা অ্যারেতে কনভার্ট করা
                 if (typeof this.config.tadsKeys === 'string') {
                     this.config.tadsKeys = this.config.tadsKeys.split(',').map(k => k.trim());
                 }
@@ -34,13 +33,13 @@ export const AdsManager = {
     async playAd() {
         await this.fetchConfig();
 
-        // 1. Try Adexium
+        // Step 1: Try Adexium (বাস্তবে অ্যাড স্ক্রিনে না আসলে পরেরটাতে যাবে)
         if (this.config.network1Enabled) {
             const resAdexium = await this.tryAdexium();
             if (resAdexium) return true;
         }
 
-        // 2. Try Tadsads (3টি ID ক্রমান্বয়ে ট্রাই করবে)
+        // Step 2: Try Tadsads (৩টি ID পর পর ট্রাই করবে)
         if (this.config.network2Enabled) {
             const keys = Array.isArray(this.config.tadsKeys) && this.config.tadsKeys.length > 0
                 ? this.config.tadsKeys 
@@ -48,11 +47,11 @@ export const AdsManager = {
 
             for (const key of keys) {
                 const resTads = await this.tryTadsSingleKey(key);
-                if (resTads) return true; // একটি আইডি কাজ করলে এখান থেকেই Success নিয়ে বের হয়ে যাবে
+                if (resTads) return true;
             }
         }
 
-        // 3. Try Monetag
+        // Step 3: Try Monetag (রিওয়ার্ডেড অ্যাড কমপ্লিট হলে True হবে)
         if (this.config.network3Enabled) {
             const resMonetag = await this.tryMonetag();
             if (resMonetag) return true;
@@ -61,22 +60,37 @@ export const AdsManager = {
         throw new Error("No ads available or ad failed to display.");
     },
 
-    // ----- 1. Adexium -----
+    // ----- 1. Adexium (Real DOM Check) -----
     tryAdexium() {
         return new Promise((resolve) => {
             if (typeof AdexiumWidget !== "undefined") {
                 try {
                     const zoneId = this.config.adexiumZoneId || "9f52803f-59b8-42ff-b041-fe7a7863ea7c";
+                    const initialIframes = document.querySelectorAll('iframe').length;
+
                     const widget = new AdexiumWidget({
                         wid: zoneId,
                         adFormat: "interstitial"
                     });
                     widget.autoMode();
-                    
-                    // Adexium লোড হওয়ার জন্য ৩ সেকেন্ড সময় দিয়ে Resolve করা
-                    setTimeout(() => resolve(true), 3000);
+
+                    // ২ সেকেন্ড পর চেক করবে Adexium নতুন কোনো iframe বা Element স্ক্রিনে এনেছে কিনা
+                    setTimeout(() => {
+                        const newIframes = document.querySelectorAll('iframe').length;
+                        const adexiumEl = document.querySelector('[class*="adexium"], [id*="adexium"]');
+
+                        if (newIframes > initialIframes || adexiumEl) {
+                            // অ্যাড সত্যি স্ক্রিনে প্রদর্শিত হলে Success
+                            resolve(true);
+                        } else {
+                            // অ্যাড লোড না হলে Fail ধরে Tadsads / Monetag-এ পাঠাবে
+                            console.warn("Adexium did not show any ad. Moving to fallback...");
+                            resolve(false);
+                        }
+                    }, 2200);
+
                 } catch (e) {
-                    console.warn("Adexium failed:", e);
+                    console.warn("Adexium error:", e);
                     resolve(false);
                 }
             } else {
@@ -94,47 +108,39 @@ export const AdsManager = {
 
             try {
                 let isResolved = false;
-                let fallbackTimer = null;
 
                 const finish = (status) => {
                     if (!isResolved) {
                         isResolved = true;
-                        if (fallbackTimer) clearTimeout(fallbackTimer);
                         resolve(status);
                     }
                 };
-
-                // যদি SDK কোন কারণে সাড়া না দেয় (যেমন নেটওয়ার্ক ব্লক), তবেই কেবল ১০ সেকেন্ড পর ফেল করবে
-                fallbackTimer = setTimeout(() => {
-                    finish(false);
-                }, 10000);
 
                 const adController = window.tads.init({
                     widgetId: String(key),
                     type: "fullscreen",
                     onShowReward: () => {
-                        finish(true); // ইউজার অ্যাড শেষ পর্যন্ত দেখলে True হবে
+                        finish(true); // ইউজার সম্পূর্ণ অ্যাড দেখলে Success
                     },
                     onAdsNotFound: () => {
-                        finish(false); // অ্যাড না পাওয়া গেলে সঙ্গে সঙ্গে পরের ID ট্রাই করবে
+                        finish(false); // অ্যাড না পেলে পরের ID
                     },
                     onError: () => {
                         finish(false);
                     },
                     onClose: () => {
-                        // রিওয়ার্ড ছাড়া কেটে দিলে ১ সেকেন্ড পর ফেল ধরা হবে
-                        setTimeout(() => finish(false), 1000);
+                        setTimeout(() => finish(false), 500);
                     }
                 });
 
                 if (adController && typeof adController.showAd === "function") {
-                    adController.showAd().catch((err) => {
-                        console.warn(`Tads showAd error for key ${key}:`, err);
-                        finish(false);
-                    });
+                    adController.showAd().catch(() => finish(false));
                 } else {
                     finish(false);
                 }
+
+                // ১০ সেকেন্ডের মধ্যে সাড়া না দিলে ফেল
+                setTimeout(() => finish(false), 10000);
 
             } catch (e) {
                 console.warn(`Tads Exception Key ${key}:`, e);
@@ -153,7 +159,7 @@ export const AdsManager = {
                 monetagFn()
                     .then(() => resolve(true))
                     .catch((err) => {
-                        console.warn("Monetag view failed or skipped:", err);
+                        console.warn("Monetag view failed/closed:", err);
                         resolve(false);
                     });
             } else {
