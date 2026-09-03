@@ -112,50 +112,63 @@ export const UI_Controller = {
 window.UI_Controller = UI_Controller;
 
 // ==========================================
-// 4. ADSGRAM CONTROLLER (Updated for t.me/PPCoin_bot/ads)
+// 4. RICHADS CONTROLLER (Push Style Ad)
 // ==========================================
 export const Ads_Controller = {
+    richadsController: null,
+
+    init: function() {
+        if (typeof TelegramAdsController === "undefined") {
+            console.error("RichAds SDK not loaded");
+            return;
+        }
+
+        this.richadsController = new TelegramAdsController();
+        this.richadsController.initialize({
+            pubId: "987925",
+            appId: "3767",
+            debug: false
+        });
+
+        console.log("RichAds initialized");
+    },
+
     playAd: function() {
-        return new Promise((resolve, reject) => {
-            const requestId = Date.now().toString();
-
-            // Result listener (যদি postMessage কাজ করে)
-            const messageHandler = function(event) {
-                const data = event.data;
-
-                if (data && data.type === "ADSGRAM_RESULT" && data.requestId === requestId) {
-                    window.removeEventListener("message", messageHandler);
-
-                    if (data.status === "success") {
-                        resolve(true);
-                    } else {
-                        reject("Ad skipped or failed.");
-                    }
-                }
-            };
-
-            window.addEventListener("message", messageHandler);
-
-// ===== সবচেয়ে গুরুত্বপূর্ণ অংশ =====
-            // Telegram Mini App লিংক খোলা
-            const adLink = `https://t.me/REDPACKETBOXBOT/adsplay?startapp=${requestId}`;
-
-            if (window.Telegram?.WebApp) {
-                // সঠিক পদ্ধতি: openTelegramLink ব্যবহার করুন
-                window.Telegram.WebApp.openTelegramLink(adLink);
-            } else {
-                // fallback
-                window.open(adLink, "_blank");
+        return new Promise(async (resolve, reject) => {
+            // Controller ready না থাকলে init করুন
+            if (!this.richadsController) {
+                this.init();
             }
 
-            // Safety timeout (৩২ সেকেন্ড)
-            setTimeout(() => {
-                window.removeEventListener("message", messageHandler);
-                reject("Ad timeout.");
-            }, 32000);
+            if (!this.richadsController) {
+                reject("RichAds not available");
+                return;
+            }
+
+            try {
+                // Push Style Ad ট্রিগার
+                await this.richadsController.triggerNativeNotification();
+
+                // অ্যাড সফলভাবে দেখানো হয়েছে
+                // এখন ১৫ সেকেন্ড অপেক্ষা করি
+                UI_Controller.showToast("🎬 Ad playing... Please wait 15 seconds");
+
+                setTimeout(() => {
+                    resolve(true);   // ১৫ সেকেন্ড পর Red Packet খুলবে
+                }, 15000);
+
+            } catch (error) {
+                console.log("No RichAds available:", error);
+                reject("Ad skipped or failed.");
+            }
         });
     }
 };
+
+// পেজ লোড হলে RichAds init করুন
+document.addEventListener("DOMContentLoaded", () => {
+    Ads_Controller.init();
+});
 
 // ==========================================
 // 5. PACKET LOGIC CONTROLLER
