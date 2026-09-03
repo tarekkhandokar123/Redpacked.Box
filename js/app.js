@@ -117,7 +117,7 @@ window.UI_Controller = UI_Controller;
 export const Ads_Controller = {
     playAd: function() {
         return new Promise((resolve, reject) => {
-            const MAIN_AD_URL = "https://ppcoin.netlify.app/adsscreen.html";
+            const MAIN_AD_URL = "https://t.me/PPCoin_bot/ads";
             const requestId = Date.now().toString();
 
             // Result listener
