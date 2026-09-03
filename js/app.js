@@ -112,63 +112,15 @@ export const UI_Controller = {
 window.UI_Controller = UI_Controller;
 
 // ==========================================
-// 4. RICHADS CONTROLLER (Push Style Ad)
+// 4. ADS CONTROLLER (Using AdsManager)
 // ==========================================
+import { AdsManager } from './ads-manager.js';
+
 export const Ads_Controller = {
-    richadsController: null,
-
-    init: function() {
-        if (typeof TelegramAdsController === "undefined") {
-            console.error("RichAds SDK not loaded");
-            return;
-        }
-
-        this.richadsController = new TelegramAdsController();
-        this.richadsController.initialize({
-            pubId: "987925",
-            appId: "3767",
-            debug: false
-        });
-
-        console.log("RichAds initialized");
-    },
-
-    playAd: function() {
-        return new Promise(async (resolve, reject) => {
-            // Controller ready না থাকলে init করুন
-            if (!this.richadsController) {
-                this.init();
-            }
-
-            if (!this.richadsController) {
-                reject("RichAds not available");
-                return;
-            }
-
-            try {
-                // Push Style Ad ট্রিগার
-                await this.richadsController.triggerNativeNotification();
-
-                // অ্যাড সফলভাবে দেখানো হয়েছে
-                // এখন ১৫ সেকেন্ড অপেক্ষা করি
-                UI_Controller.showToast("🎬 Ad playing... Please wait 15 seconds");
-
-                setTimeout(() => {
-                    resolve(true);   // ১৫ সেকেন্ড পর Red Packet খুলবে
-                }, 15000);
-
-            } catch (error) {
-                console.log("No RichAds available:", error);
-                reject("Ad skipped or failed.");
-            }
-        });
+    playAd: function () {
+        return AdsManager.playAd();
     }
 };
-
-// পেজ লোড হলে RichAds init করুন
-document.addEventListener("DOMContentLoaded", () => {
-    Ads_Controller.init();
-});
 
 // ==========================================
 // 5. PACKET LOGIC CONTROLLER
