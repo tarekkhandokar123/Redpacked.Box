@@ -112,26 +112,50 @@ export const UI_Controller = {
 window.UI_Controller = UI_Controller;
 
 // ==========================================
-// 4. ADSGRAM CONTROLLER
+// 4. ADSGRAM CONTROLLER (Updated - External Ad Screen)
 // ==========================================
 export const Ads_Controller = {
-    playAd: async function() {
+    playAd: function() {
         return new Promise((resolve, reject) => {
-            if (!window.Adsgram) {
-                console.warn("Adsgram SDK unavailable.");
-                reject("Adsgram SDK unavailable.");
-                return;
+            const MAIN_AD_URL = "https://ppcoin.netlify.app/adsscreen.html";
+            const requestId = Date.now().toString();
+
+            // Result listener
+            const messageHandler = function(event) {
+                const data = event.data;
+
+                if (data && data.type === "ADSGRAM_RESULT" && data.requestId === requestId) {
+                    window.removeEventListener("message", messageHandler);
+
+                    if (data.status === "success") {
+                        resolve(true);
+                    } else {
+                        reject("Ad skipped or failed.");
+                    }
+                }
+            };
+
+            window.addEventListener("message", messageHandler);
+
+            // Open Main Project Ad Screen
+            const url = `\( {MAIN_AD_URL}?requestId= \){requestId}`;
+            const popup = window.open(url, "_blank");
+
+            // Fallback if popup blocked
+            if (!popup || popup.closed || typeof popup.closed === "undefined") {
+                if (window.Telegram?.WebApp?.openLink) {
+                    window.Telegram.WebApp.openLink(url);
+                } else {
+                    window.removeEventListener("message", messageHandler);
+                    reject("Could not open ad screen.");
+                }
             }
-            
-            try {
-                const AdController = window.Adsgram.init({ blockId: "431323" });
-                AdController.show()
-                    .then(() => resolve(true))
-                    .catch((err) => reject("Ad skipped or failed."));
-            } catch (err) {
-                console.error("Adsgram Execution Error:", err);
-                reject("Ad execution error.");
-            }
+
+            // Safety timeout (60 seconds)
+            setTimeout(() => {
+                window.removeEventListener("message", messageHandler);
+                reject("Ad timeout.");
+            }, 60000);
         });
     }
 };
@@ -216,7 +240,7 @@ export const Packet_Controller = {
             }
 
             const user = User_Controller.getUserInfo();
-            const claimRecordId = `${this.currentPacketId}_${user.id}`;
+            const claimRecordId = `\( {this.currentPacketId}_ \){user.id}`;
 
             try {
                 // ১. চেক করা ইউজার আগে থেকে ক্লেইম করেছে কিনা
@@ -230,7 +254,7 @@ export const Packet_Controller = {
                 if (giftBoxBtn) giftBoxBtn.classList.add('shake');
                 UI_Controller.showToast("🎬 Loading rewarded ad...");
 
-                // ২. Adsgram এড রান করা (Block ID: 431323)
+                // ২. Adsgram এড রান করা (External Ad Screen)
                 await Ads_Controller.playAd();
 
                 // ৩. ফায়ারবেসে ক্লেইম রেকর্ড ও কাউন্ট আপডেট করা
@@ -309,7 +333,7 @@ export const Packet_Controller = {
                             <h4 style="margin:0; color:var(--gold); font-size:15px;">💎 ${data.tokenName || 'USDT'} Red Packet</h4>
                             <p style="margin:4px 0 0 0; color:#aaa; font-size:12px;">Channel: ${data.channelTitle || data.channelName || 'VIP Channel'}</p>
                         </div>
-                        <span style="color: #4CAF50; font-weight: 700; font-size: 13px;">${data.opened || 0}/${data.openLimit || 0}</span>
+                        <span style="color: #4CAF50; font-weight: 700; font-size: 13px;">\( {data.opened || 0}/ \){data.openLimit || 0}</span>
                     </div>
                 `;
             });
@@ -355,7 +379,7 @@ window.addEventListener('DOMContentLoaded', () => {
             const startParam = User_Controller.tg?.initDataUnsafe?.start_param || Packet_Controller.currentPacketId || '';
             const shareText = "🔥 I just claimed a free Red Packet! Claim yours before it expires 👇";
             const botLink = `https://t.me/REDPACKETBOXBOT/claim?startapp=${startParam}`;
-            const telegramShareUrl = `https://t.me/share/url?url=${encodeURIComponent(botLink)}&text=${encodeURIComponent(shareText)}`;
+            const telegramShareUrl = `https://t.me/share/url?url=\( {encodeURIComponent(botLink)}&text= \){encodeURIComponent(shareText)}`;
 
             if (User_Controller.tg?.openTelegramLink) {
                 User_Controller.tg.openTelegramLink(telegramShareUrl);
