@@ -1,228 +1,142 @@
 // ==========================================
-// Ads Manager - Real Waterfall + 18s Lock Screen
-// Priority: Adexium → Tads → Monetag
-// RichAds always tries (optional)
+// Dynamic Waterfall Ad Controller
+// Priority Sequence: Adsgram → Adexium/Tads → Monetag
+// User MUST view an ad successfully to collect Red Packet
 // ==========================================
+import { db } from './app.js';
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
 
 export const AdsManager = {
+    config: {
+        network1Enabled: true,
+        adsgramBlockId: "431323",
+        network2Enabled: true,
+        adexiumZoneId: "11907",
+        tadsadsKey: "1751",
+        network3Enabled: true,
+        monetagId: "9669121"
+    },
 
-    richadsController: null,
-    isAdShowing: false,
-    adFinished: false,
-    canClose: false,
-    lockTimer: null,
-
-    init() {
-        // RichAds
+    async fetchConfig() {
         try {
-            if (typeof TelegramAdsController !== "undefined") {
-                this.richadsController = new TelegramAdsController();
-                this.richadsController.initialize({
-                    pubId: "987925",
-                    appId: "3767",
-                    debug: false
-                });
-                console.log("RichAds ready");
+            const configRef = doc(db, "app_config", "ad_settings");
+            const snap = await getDoc(configRef);
+            if (snap.exists()) {
+                this.config = { ...this.config, ...snap.data() };
             }
         } catch (e) {
-            console.log("RichAds init error:", e);
+            console.warn("Could not load dynamic ad config, using defaults:", e);
         }
     },
 
-    // ===== Main Play Function =====
     async playAd() {
-        return new Promise(async (resolve, reject) => {
-            this.isAdShowing = true;
-            this.adFinished = false;
-            this.canClose = false;
+        await this.fetchConfig();
 
-            // Show Lock Screen
-            this.showLockScreen();
+        // 1. Try Network 1: Adsgram
+        if (this.config.network1Enabled) {
+            const res1 = await this.tryAdsgram();
+            if (res1) return true;
+        }
 
-            // Start 18 seconds lock
-            this.startLockTimer(18);
+        // 2. Try Network 2: Adexium / Tads
+        if (this.config.network2Enabled) {
+            const res2 = await this.tryAdexium();
+            if (res2) return true;
 
-            // 1. RichAds (optional)
-            this.showRichAds();
+            const resTads = await this.tryTads();
+            if (resTads) return true;
+        }
 
-            // 2. Waterfall
-            let success = false;
+        // 3. Try Network 3: Monetag
+        if (this.config.network3Enabled) {
+            const res3 = await this.tryMonetag();
+            if (res3) return true;
+        }
 
-            // Try Adexium
-            success = await this.tryAdexium();
-            if (success) {
-                this.onAdSuccess(resolve);
-                return;
+        throw new Error("Ad skipped or failed.");
+    },
+
+    // ----- Ad Network 1: Adsgram -----
+    tryAdsgram() {
+        return new Promise((resolve) => {
+            const blockId = this.config.adsgramBlockId || "431323";
+            if (window.Adsgram) {
+                try {
+                    const AdController = window.Adsgram.init({ blockId: blockId });
+                    AdController.show()
+                        .then((result) => {
+                            if (result && result.done) resolve(true);
+                            else resolve(false);
+                        })
+                        .catch(() => resolve(false));
+                } catch (e) {
+                    resolve(false);
+                }
+            } else {
+                resolve(false);
             }
-
-            // Try Tads
-            success = await this.tryTads();
-            if (success) {
-                this.onAdSuccess(resolve);
-                return;
-            }
-
-            // Try Monetag
-            success = await this.tryMonetag();
-            if (success) {
-                this.onAdSuccess(resolve);
-                return;
-            }
-
-            // কোনো অ্যাডই আসেনি
-            this.hideLockScreen();
-            reject("Ad skipped or failed.");
         });
     },
 
-    onAdSuccess(resolve) {
-        this.adFinished = true;
-        console.log("Ad finished successfully");
-
-        // যদি ১৮ সেকেন্ড শেষ হয়ে যায় বা অ্যাড শেষ হয় → resolve
-        if (this.canClose || this.adFinished) {
-            this.hideLockScreen();
-            resolve(true);
-        }
-    },
-
-    // ===== 18 Second Lock Screen =====
-    showLockScreen() {
-        let screen = document.getElementById("ad-lock-screen");
-        if (!screen) {
-            screen = document.createElement("div");
-            screen.id = "ad-lock-screen";
-            screen.innerHTML = `
-                <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;color:white;font-family:sans-serif;">
-                    <div class="spinner" style="width:50px;height:50px;border:5px solid #333;border-top:5px solid #ffd700;border-radius:50%;animation:spin 1s linear infinite;margin-bottom:20px;"></div>
-                    <div id="lock-timer-text" style="font-size:18px;color:#ffd700;">Please wait 18s...</div>
-                    <div style="margin-top:10px;font-size:14px;opacity:0.7;">Loading reward...</div>
-                </div>
-                <style>
-                    @keyframes spin { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
-                </style>
-            `;
-            document.body.appendChild(screen);
-        }
-        screen.style.display = "flex";
-    },
-
-    hideLockScreen() {
-        const screen = document.getElementById("ad-lock-screen");
-        if (screen) screen.style.display = "none";
-        if (this.lockTimer) clearInterval(this.lockTimer);
-    },
-
-    startLockTimer(seconds) {
-        let remaining = seconds;
-        const textEl = document.getElementById("lock-timer-text");
-
-        this.lockTimer = setInterval(() => {
-            remaining--;
-            if (textEl) {
-                textEl.innerText = remaining > 0 ? `Please wait ${remaining}s...` : "You can continue";
-            }
-
-            if (remaining <= 0) {
-                clearInterval(this.lockTimer);
-                this.canClose = true;
-
-                // যদি অ্যাড আগেই শেষ হয়ে যায়
-                if (this.adFinished) {
-                    this.hideLockScreen();
-                }
-            }
-        }, 1000);
-    },
-
-    // ===== RichAds =====
-    showRichAds() {
-        if (!this.richadsController) return;
-        this.richadsController.triggerNativeNotification()
-            .catch(() => {});
-    },
-
-    // ===== Adexium =====
+    // ----- Ad Network 2: Adexium -----
     tryAdexium() {
         return new Promise((resolve) => {
-            if (typeof AdexiumWidget === "undefined") {
-                return resolve(false);
-            }
-
-            try {
-                const widget = new AdexiumWidget({
-                    wid: "11907",
-                    adFormat: "interstitial"
-                });
-
-                widget.autoMode();
-
-                // Adexium-এর কোনো reliable callback নেই, তাই ৪ সেকেন্ড পর চেক
-                setTimeout(() => {
-                    // এখানে আমরা ধরে নিচ্ছি যদি SDK লোড হয় তাহলে চেষ্টা করেছে
-                    resolve(true);
-                }, 4000);
-
-            } catch (e) {
+            if (typeof AdexiumWidget !== "undefined") {
+                try {
+                    const zoneId = this.config.adexiumZoneId || "11907";
+                    const widget = new AdexiumWidget({
+                        wid: zoneId,
+                        adFormat: "interstitial"
+                    });
+                    widget.autoMode();
+                    setTimeout(() => resolve(true), 3500);
+                } catch (e) {
+                    resolve(false);
+                }
+            } else {
                 resolve(false);
             }
         });
     },
 
-    // ===== Tads =====
+    // ----- Ad Network 2 Fallback: Tads -----
     tryTads() {
         return new Promise((resolve) => {
-            if (typeof window.tads === "undefined") {
-                return resolve(false);
-            }
-
-            try {
-                const adController = window.tads.init({
-                    widgetId: "1751",
-                    type: "fullscreen",
-                    debug: false,
-                    onShowReward: () => {
-                        resolve(true);
-                    },
-                    onAdsNotFound: () => {
-                        resolve(false);
+            if (typeof window.tads !== "undefined") {
+                try {
+                    const key = this.config.tadsadsKey || "1751";
+                    const adController = window.tads.init({
+                        widgetId: key,
+                        type: "fullscreen",
+                        onShowReward: () => resolve(true),
+                        onAdsNotFound: () => resolve(false)
+                    });
+                    if (adController && typeof adController.showAd === "function") {
+                        adController.showAd().catch(() => resolve(false));
+                    } else {
+                        setTimeout(() => resolve(false), 2500);
                     }
-                });
-
-                // showAd কল
-                if (adController && typeof adController.showAd === "function") {
-                    adController.showAd().catch(() => resolve(false));
-                } else {
-                    // কিছু ভার্সনে init এর পর সরাসরি কাজ করে
-                    setTimeout(() => resolve(false), 3000);
+                } catch (e) {
+                    resolve(false);
                 }
-
-                // Timeout
-                setTimeout(() => resolve(false), 6000);
-
-            } catch (e) {
+            } else {
                 resolve(false);
             }
         });
     },
 
-    // ===== Monetag =====
+    // ----- Ad Network 3: Monetag -----
     tryMonetag() {
         return new Promise((resolve) => {
-            if (typeof show_11714437 !== "function") {
-                return resolve(false);
+            const monetagFn = window.show_9669121 || window.show_11714437;
+            if (typeof monetagFn === "function") {
+                monetagFn()
+                    .then(() => resolve(true))
+                    .catch(() => resolve(false));
+                setTimeout(() => resolve(false), 6000);
+            } else {
+                resolve(false);
             }
-
-            show_9669121()
-                .then(() => resolve(true))
-                .catch(() => resolve(false));
-
-            setTimeout(() => resolve(false), 8000);
         });
     }
 };
-
-// Auto init
-document.addEventListener("DOMContentLoaded", () => {
-    AdsManager.init();
-});
