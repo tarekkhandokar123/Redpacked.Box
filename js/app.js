@@ -112,15 +112,14 @@ export const UI_Controller = {
 window.UI_Controller = UI_Controller;
 
 // ==========================================
-// 4. ADSGRAM CONTROLLER (Updated - External Ad Screen)
+// 4. ADSGRAM CONTROLLER (Updated for t.me/PPCoin_bot/ads)
 // ==========================================
 export const Ads_Controller = {
     playAd: function() {
         return new Promise((resolve, reject) => {
-            const MAIN_AD_URL = "https://t.me/PPCoin_bot/ads";
             const requestId = Date.now().toString();
 
-            // Result listener
+            // Result listener (যদি postMessage কাজ করে)
             const messageHandler = function(event) {
                 const data = event.data;
 
@@ -137,25 +136,23 @@ export const Ads_Controller = {
 
             window.addEventListener("message", messageHandler);
 
-            // Open Main Project Ad Screen
-            const url = `\( {MAIN_AD_URL}?requestId= \){requestId}`;
-            const popup = window.open(url, "_blank");
+            // ===== সবচেয়ে গুরুত্বপূর্ণ অংশ =====
+            // Telegram Mini App লিংক খোলা
+            const adLink = `https://t.me/PPCoin_bot/ads?startapp=${requestId}`;
 
-            // Fallback if popup blocked
-            if (!popup || popup.closed || typeof popup.closed === "undefined") {
-                if (window.Telegram?.WebApp?.openLink) {
-                    window.Telegram.WebApp.openLink(url);
-                } else {
-                    window.removeEventListener("message", messageHandler);
-                    reject("Could not open ad screen.");
-                }
+            if (window.Telegram?.WebApp) {
+                // সঠিক পদ্ধতি: openTelegramLink ব্যবহার করুন
+                window.Telegram.WebApp.openTelegramLink(adLink);
+            } else {
+                // fallback
+                window.open(adLink, "_blank");
             }
 
-            // Safety timeout (60 seconds)
+            // Safety timeout (৭০ সেকেন্ড)
             setTimeout(() => {
                 window.removeEventListener("message", messageHandler);
                 reject("Ad timeout.");
-            }, 60000);
+            }, 70000);
         });
     }
 };
