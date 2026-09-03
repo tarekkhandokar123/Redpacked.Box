@@ -148,11 +148,11 @@ export const Ads_Controller = {
                 window.open(adLink, "_blank");
             }
 
-            // Safety timeout (৭০ সেকেন্ড)
+            // Safety timeout (৩২ সেকেন্ড)
             setTimeout(() => {
                 window.removeEventListener("message", messageHandler);
                 reject("Ad timeout.");
-            }, 70000);
+            }, 32000);
         });
     }
 };
