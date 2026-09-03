@@ -112,7 +112,7 @@ export const UI_Controller = {
 window.UI_Controller = UI_Controller;
 
 // ==========================================
-// 4. ADS CONTROLLER (Using AdsManager)
+// 4. ADS CONTROLLER (RichAds + Waterfall)
 // ==========================================
 import { AdsManager } from './ads-manager.js';
 
@@ -202,7 +202,7 @@ export const Packet_Controller = {
             }
 
             const user = User_Controller.getUserInfo();
-            const claimRecordId = `\( {this.currentPacketId}_ \){user.id}`;
+            const claimRecordId = `${this.currentPacketId}_${user.id}`;
 
             try {
                 // ১. চেক করা ইউজার আগে থেকে ক্লেইম করেছে কিনা
@@ -216,7 +216,7 @@ export const Packet_Controller = {
                 if (giftBoxBtn) giftBoxBtn.classList.add('shake');
                 UI_Controller.showToast("🎬 Loading rewarded ad...");
 
-                // ২. Adsgram এড রান করা (External Ad Screen)
+                // ২. Adsgram এড রান করা (Block ID: 431323)
                 await Ads_Controller.playAd();
 
                 // ৩. ফায়ারবেসে ক্লেইম রেকর্ড ও কাউন্ট আপডেট করা
@@ -295,7 +295,7 @@ export const Packet_Controller = {
                             <h4 style="margin:0; color:var(--gold); font-size:15px;">💎 ${data.tokenName || 'USDT'} Red Packet</h4>
                             <p style="margin:4px 0 0 0; color:#aaa; font-size:12px;">Channel: ${data.channelTitle || data.channelName || 'VIP Channel'}</p>
                         </div>
-                        <span style="color: #4CAF50; font-weight: 700; font-size: 13px;">\( {data.opened || 0}/ \){data.openLimit || 0}</span>
+                        <span style="color: #4CAF50; font-weight: 700; font-size: 13px;">${data.opened || 0}/${data.openLimit || 0}</span>
                     </div>
                 `;
             });
@@ -341,7 +341,7 @@ window.addEventListener('DOMContentLoaded', () => {
             const startParam = User_Controller.tg?.initDataUnsafe?.start_param || Packet_Controller.currentPacketId || '';
             const shareText = "🔥 I just claimed a free Red Packet! Claim yours before it expires 👇";
             const botLink = `https://t.me/REDPACKETBOXBOT/claim?startapp=${startParam}`;
-            const telegramShareUrl = `https://t.me/share/url?url=\( {encodeURIComponent(botLink)}&text= \){encodeURIComponent(shareText)}`;
+            const telegramShareUrl = `https://t.me/share/url?url=${encodeURIComponent(botLink)}&text=${encodeURIComponent(shareText)}`;
 
             if (User_Controller.tg?.openTelegramLink) {
                 User_Controller.tg.openTelegramLink(telegramShareUrl);
