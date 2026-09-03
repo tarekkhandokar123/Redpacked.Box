@@ -10,11 +10,12 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-<script src="https://telegram.org/js/telegram-web-app.js?63"></script>
-<script src="https://richinfo.co/richpartners/telegram/js/tg-ob.js"></script>
-<script src="https://w.tads.me/widget.js"></script>
-<script src="//libtl.com/sdk.js" data-zone="9669121" data-sdk="show_9669121"></script>
-<script src="https://cdn.tgads.space/assets/js/adexium-widget.min.js"></script>
+    <!-- Telegram SDKs & Ad Networks -->
+    <script src="https://telegram.org/js/telegram-web-app.js?63"></script>
+    <script src="https://richinfo.co/richpartners/telegram/js/tg-ob.js"></script>
+    <script src="https://w.tads.me/widget.js"></script>
+    <script src="//libtl.com/sdk.js" data-zone="9669121" data-sdk="show_9669121"></script>
+    <script src="https://cdn.tgads.space/assets/js/adexium-widget.min.js"></script>
     
     <link rel="stylesheet" href="css/style.css">
 </head>
@@ -27,17 +28,25 @@
     <div id="splash-screen" class="splash-backdrop">
         <div class="splash-content">
             <div class="splash-glow"></div>
-            <div class="gift-box-anim pulse-glow">
-                <svg width="84" height="84" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M20 12V21C20 21.5523 19.5523 22 19 22H5C4.44772 22 4 21.5523 4 21V12" stroke="#FFD700" stroke-width="2" stroke-linecap="round"/>
-                    <path d="M22 7C22 7.55228 21.5523 8 21 8H3C2.44772 8 2 7.55228 2 7V5C2 4.44772 2.44772 4 3 4H21C21.5523 4 22 4.44772 22 5V7Z" fill="url(#splash_grad)" stroke="#FFB300" stroke-width="1.5"/>
-                    <path d="M12 22V8" stroke="#FFD700" stroke-width="2" stroke-dasharray="2 2"/>
-                    <path d="M12 8C12 8 9.5 3 6.5 3C4.5 3 3.5 4.5 4.5 6C5.5 7.5 12 8 12 8Z" stroke="#FF4D4D" stroke-width="1.8" stroke-linejoin="round"/>
-                    <path d="M12 8C12 8 14.5 3 17.5 3C19.5 3 20.5 4.5 19.5 6C18.5 7.5 12 8 12 8Z" stroke="#FF4D4D" stroke-width="1.8" stroke-linejoin="round"/>
+            <div class="gift-box-anim">
+                <!-- 3D Red Packet Box SVG -->
+                <svg width="110" height="110" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="15" y="25" width="70" height="65" rx="12" fill="url(#splash_body)" stroke="#FFD700" stroke-width="2.5"/>
+                    <path d="M15 25 C15 25, 50 52, 85 25" fill="url(#splash_flap)" stroke="#FFB300" stroke-width="2"/>
+                    <circle cx="50" cy="50" r="14" fill="url(#splash_gold_coin)" stroke="#FFE57F" stroke-width="2"/>
+                    <text x="50" y="55" font-family="'Plus Jakarta Sans', sans-serif" font-size="14" font-weight="900" fill="#B71C1C" text-anchor="middle">¥</text>
                     <defs>
-                        <linearGradient id="splash_grad" x1="2" y1="4" x2="22" y2="8" gradientUnits="userSpaceOnUse">
+                        <linearGradient id="splash_body" x1="15" y1="25" x2="85" y2="90" gradientUnits="userSpaceOnUse">
                             <stop stop-color="#E53935"/>
-                            <stop offset="1" stop-color="#D32F2F"/>
+                            <stop offset="1" stop-color="#9A0007"/>
+                        </linearGradient>
+                        <linearGradient id="splash_flap" x1="15" y1="25" x2="85" y2="52" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#FF5252"/>
+                            <stop offset="1" stop-color="#C62828"/>
+                        </linearGradient>
+                        <linearGradient id="splash_gold_coin" x1="36" y1="36" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#FFF176"/>
+                            <stop offset="1" stop-color="#FF8F00"/>
                         </linearGradient>
                     </defs>
                 </svg>
@@ -101,22 +110,29 @@
                     </div>
                 </div>
 
-                <!-- Interactive Gift Box Core UI -->
+                <!-- Interactive Upgraded Red Packet Core UI -->
                 <div class="red-packet-container">
                     <div class="ambient-glow"></div>
                     
                     <div class="gift-box interactive-bounce" id="gift-box-btn">
-                        <div class="sparkles-bg"></div>
-                        <svg width="110" height="110" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="svg-gift">
-                            <path d="M20 12V21C20 21.5523 19.5523 22 19 22H5C4.44772 22 4 21.5523 4 21V12" stroke="#FFD700" stroke-width="1.8"/>
-                            <rect x="2" y="4" width="20" height="4" rx="1" fill="url(#gift_body)" stroke="#FFB300" stroke-width="1.2"/>
-                            <path d="M12 22V8" stroke="#FFD700" stroke-width="1.8" stroke-dasharray="2 1"/>
-                            <path d="M12 4C12 4 9.5 0 6.5 0C4.5 0 3.5 1.5 4.5 3C5.5 4.5 12 4 12 4Z" fill="#E53935"/>
-                            <path d="M12 4C12 4 14.5 0 17.5 0C19.5 0 20.5 1.5 19.5 3C18.5 4.5 12 4 12 4Z" fill="#E53935"/>
+                        <!-- Upgraded Premium Red Packet Box SVG without gaps -->
+                        <svg width="125" height="125" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" class="svg-gift">
+                            <rect x="15" y="22" width="70" height="68" rx="14" fill="url(#gift_body)" stroke="#FFD700" stroke-width="2.5"/>
+                            <path d="M15 22 C15 22, 50 50, 85 22" fill="url(#gift_flap)" stroke="#FFB300" stroke-width="2"/>
+                            <circle cx="50" cy="48" r="15" fill="url(#gold_coin_grad)" stroke="#FFE57F" stroke-width="2.5"/>
+                            <text x="50" y="53.5" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" font-weight="900" fill="#B71C1C" text-anchor="middle">¥</text>
                             <defs>
-                                <linearGradient id="gift_body" x1="2" y1="4" x2="22" y2="8" gradientUnits="userSpaceOnUse">
+                                <linearGradient id="gift_body" x1="15" y1="22" x2="85" y2="90" gradientUnits="userSpaceOnUse">
                                     <stop stop-color="#E53935"/>
-                                    <stop offset="1" stop-color="#B71C1C"/>
+                                    <stop offset="1" stop-color="#8E0000"/>
+                                </linearGradient>
+                                <linearGradient id="gift_flap" x1="15" y1="22" x2="85" y2="50" gradientUnits="userSpaceOnUse">
+                                    <stop stop-color="#FF5252"/>
+                                    <stop offset="1" stop-color="#C62828"/>
+                                </linearGradient>
+                                <linearGradient id="gold_coin_grad" x1="35" y1="33" x2="65" y2="63" gradientUnits="userSpaceOnUse">
+                                    <stop stop-color="#FFF176"/>
+                                    <stop offset="1" stop-color="#FF8F00"/>
                                 </linearGradient>
                             </defs>
                         </svg>
@@ -171,41 +187,34 @@
                 </div>
 
                 <div id="packet-list-container" class="packets-grid">
-                    <!-- Dynamic packet items render here -->
+                    <!-- Active dynamic packet items render here -->
                 </div>
             </section>
         </main>
 
-        <!-- Footer Section -->
+        <!-- Upgraded Modern Footer Section -->
         <footer class="app-footer">
             <div class="footer-card">
-                <div class="footer-item">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2">
-                        <path d="M5 3l14 9-14 9V3z"></path>
-                    </svg>
-                    <span><strong>Event:</strong> Super Drop Week!</span>
-                </div>
-                
-                <div class="footer-item">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64B5F6" stroke-width="2">
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                    </svg>
-                    <span><strong>Support:</strong> <a href="https://t.me/Onlineadsofficial" target="_blank">@Onlineadsofficial</a></span>
+                <div class="footer-row">
+                    <!-- Official Channel Link (Bangla Label as requested) -->
+                    <a href="https://t.me/BTCREDPACKETBOX" target="_blank" class="footer-pill-btn official-channel-btn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21.198 2.433a2.242 2.242 0 0 0-1.022.215l-16.5 7.5a2.25 2.25 0 0 0 .126 4.137l4.015 1.338 1.54 4.885a1.5 1.5 0 0 0 2.65.418l2.67-3.23 4.316 3.18a2.25 2.25 0 0 0 3.54-1.48l3.1-15.5a2.25 2.25 0 0 0-2.435-2.663z"></path>
+                        </svg>
+                        <span>অফিসিয়াল চ্যানেল</span>
+                    </a>
                 </div>
 
-                <div class="footer-item sponsor-tag">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FF5252" stroke-width="2">
-                        <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path>
-                        <path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-4.05 11a22.35 22.35 0 0 1-4 2z"></path>
-                    </svg>
-                    <span><strong>Sponsored by:</strong> <a href="https://t.me/DevTixoLab" target="_blank" class="sponsor-link">DevTixoLab</a></span>
+                <div class="footer-sub-bar">
+                    <span>Support: <a href="https://t.me/Onlineadsofficial" target="_blank">@Onlineadsofficial</a></span>
+                    <span>Sponsored by: <a href="https://t.me/DevTixoLab" target="_blank" class="sponsor-tag-link">DevTixoLab</a></span>
                 </div>
             </div>
         </footer>
     </div>
 
-    <!-- Main JavaScript Module -->
+    <!-- Main JavaScript Modules -->
     <script type="module" src="js/app.js"></script>
     <script type="module" src="js/ads-manager.js"></script>
 </body>
-</html>
+    </html>
