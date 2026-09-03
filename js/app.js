@@ -136,9 +136,9 @@ export const Ads_Controller = {
 
             window.addEventListener("message", messageHandler);
 
-            // ===== সবচেয়ে গুরুত্বপূর্ণ অংশ =====
+// ===== সবচেয়ে গুরুত্বপূর্ণ অংশ =====
             // Telegram Mini App লিংক খোলা
-            const adLink = `https://t.me/PPCoin_bot/ads?startapp=${requestId}`;
+            const adLink = `https://t.me/REDPACKETBOXBOT/adsplay?startapp=${requestId}`;
 
             if (window.Telegram?.WebApp) {
                 // সঠিক পদ্ধতি: openTelegramLink ব্যবহার করুন
