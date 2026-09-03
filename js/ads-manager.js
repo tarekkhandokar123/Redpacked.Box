@@ -209,7 +209,7 @@ export const AdsManager = {
     // ===== Monetag =====
     tryMonetag() {
         return new Promise((resolve) => {
-            if (typeof show_9669121 !== "function") {
+            if (typeof show_11714437 !== "function") {
                 return resolve(false);
             }
 
