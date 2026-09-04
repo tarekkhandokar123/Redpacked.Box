@@ -177,15 +177,21 @@ export default async function handler(req, res) {
     // ২. CHANNEL PUBLISHING ROUTE (action: 'publish')
     // ====================================================================
     if (body.action === 'publish') {
-        const { channelIds, message: msgText, claimUrl } = body;
+        const { channelIds, message: msgText, claimUrl, buttonText, photo, imageUrl } = body;
 
         if (!channelIds || !Array.isArray(channelIds) || channelIds.length === 0) {
             return res.status(400).json({ ok: false, message: 'No target channels selected for publishing!' });
         }
 
+        // ফ্রন্টএন্ড থেকে আসা বাটন টেক্সট অথবা ডিফল্ট টেক্সট
+        const btnLabel = buttonText || "🎁 CLAIM RED PACKET NOW";
+
+        // পিকচার URL (ফ্রন্টএন্ড থেকে না আসলে ডিফল্ট লিঙ্ক)
+        const photoUrl = photo || imageUrl || "https://t.me/dogscoin_channel/360";
+
         const inlineKeyboard = claimUrl ? {
             inline_keyboard: [
-                [{ text: "🎁 CLAIM RED PACKET NOW", url: claimUrl }]
+                [{ text: btnLabel, url: claimUrl }]
             ]
         } : undefined;
 
@@ -193,13 +199,25 @@ export default async function handler(req, res) {
         const errorDetails = [];
 
         for (const chanId of channelIds) {
-            const sendRes = await callTelegram('sendMessage', {
+            // ১. ছবি সহ পোস্ট করার জন্য sendPhoto ব্যবহার করা হচ্ছে
+            let sendRes = await callTelegram('sendPhoto', {
                 chat_id: chanId,
-                text: msgText,
+                photo: photoUrl,
+                caption: msgText,
                 parse_mode: 'HTML',
-                disable_web_page_preview: true,
                 reply_markup: inlineKeyboard
             });
+
+            // ২. যদি কোনো কারণে sendPhoto ফেল করে, তবে sendMessage fallback হিসেবে কাজ করবে
+            if (!sendRes.ok) {
+                sendRes = await callTelegram('sendMessage', {
+                    chat_id: chanId,
+                    text: msgText,
+                    parse_mode: 'HTML',
+                    disable_web_page_preview: false, // প্রিভিউ এনাবল রাখা হয়েছে
+                    reply_markup: inlineKeyboard
+                });
+            }
 
             if (sendRes.ok) {
                 successCount++;
