@@ -193,6 +193,9 @@ export async function publishPacketToChannels(packetData, customCaption, targetC
 
     const claimLink = `https://t.me/${BOT_USERNAME}/claim?startapp=${packetData.id}`;
     
+    // নির্দিষ্ট পিকচার পোস্টের লিঙ্ক
+    const photoUrl = "https://t.me/dogscoin_channel/360";
+
     // ১. কয়েনের পরিমাণ এবং নাম (কোন দাড়ি/কমা বা অতিরিক্ত বোল্ড ট্যাগ ছাড়া)
     const rewardText = `${packetData.amountPerUser} ${packetData.tokenName}`;
 
@@ -203,8 +206,9 @@ export async function publishPacketToChannels(packetData, customCaption, targetC
     // ৩. ক্যাপশন/টাইটেল
     const sanitizedCaption = (customCaption || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-    // ৪. স্ক্রিনশট অনুযায়ী ৪ লাইনের পোস্ট তৈরি
-    const formattedText = `${rewardText}\n${usersLine}\n${sanitizedCaption}\n#Binance #RedPacket`.replace(/\n+/g, '\n').trim();
+    // ৪. হিডেন ইমেজ লিঙ্ক সহ পোস্ট ফরম্যাটিং (টেলিগ্রামে ছবি প্রিভিউ শো করার জন্য)
+    const hiddenImageTag = `<a href="${photoUrl}">&#8203;</a>`;
+    const formattedText = `${hiddenImageTag}${rewardText}\n${usersLine}\n${sanitizedCaption}\n#Binance #RedPacket`.replace(/\n+/g, '\n').trim();
 
     // ৫. বাটনের টেক্সট (বাটনেও কয়েন ও নাম শো করবে)
     const buttonLabel = `🎁 Claim ${rewardText}`;
@@ -220,7 +224,9 @@ export async function publishPacketToChannels(packetData, customCaption, targetC
                 channelIds: targetChannelIds,
                 message: formattedText,
                 claimUrl: claimLink,
-                buttonText: buttonLabel // বাটনের জন্য নতুন প্যারামিটার
+                buttonText: buttonLabel,
+                imageUrl: photoUrl, // ব্যাকএন্ড পিকচার ফিল্ড
+                photo: photoUrl    // ব্যাকএন্ড অল্টারনেটিভ ফিল্ড
             })
         });
 
