@@ -192,25 +192,31 @@ export async function publishPacketToChannels(packetData, customCaption, targetC
     }
 
     const claimLink = `https://t.me/${BOT_USERNAME}/claim?startapp=${packetData.id}`;
-    
-    // নির্দিষ্ট পিকচার পোস্টের লিঙ্ক
     const photoUrl = "https://t.me/dogscoin_channel/360";
 
-    // ১. কয়েনের পরিমাণ এবং নাম (কোন দাড়ি/কমা বা অতিরিক্ত বোল্ড ট্যাগ ছাড়া)
+    // ১. ১ম লাইন: কোনো লেবেল ছাড়া সরাসরি অ্যামাউন্ট ও কয়েন নাম (যেমন: 0.01 USDT)
     const rewardText = `${packetData.amountPerUser} ${packetData.tokenName}`;
 
-    // ২. কত জন ক্লাইম করতে পারবে
-    const totalUsersCount = packetData.totalUsers || packetData.maxUsers || packetData.totalCount || '';
-    const usersLine = totalUsersCount ? `${totalUsersCount} Users` : '';
+    // ২. ২য় লাইন: কতজন ইউজার ক্লাইম করতে পারবে (যেমন: 100 Users)
+    const userCount = packetData.totalUsers || packetData.maxUsers || packetData.totalCount || '';
+    const usersLine = userCount ? `${userCount} Users` : '';
 
-    // ৩. ক্যাপশন/টাইটেল
+    // ৩. ৩য় লাইন: ছোট টাইটেল/ক্যাপশন
     const sanitizedCaption = (customCaption || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-    // ৪. হিডেন ইমেজ লিঙ্ক সহ পোস্ট ফরম্যাটিং (টেলিগ্রামে ছবি প্রিভিউ শো করার জন্য)
+    // ৪. ছবি সহ ৪ লাইনের পোস্ট তৈরি
     const hiddenImageTag = `<a href="${photoUrl}">&#8203;</a>`;
-    const formattedText = `${hiddenImageTag}${rewardText}\n${usersLine}\n${sanitizedCaption}\n#Binance #RedPacket`.replace(/\n+/g, '\n').trim();
+    
+    const lines = [
+        `${hiddenImageTag}${rewardText}`,
+        usersLine,
+        sanitizedCaption,
+        "#Binance #RedPacket"
+    ].filter(line => line.trim() !== "");
 
-    // ৫. বাটনের টেক্সট (বাটনেও কয়েন ও নাম শো করবে)
+    const formattedText = lines.join('\n');
+
+    // ৫. বাটনের টেক্সট (যেমন: 🎁 Claim 0.01 USDT)
     const buttonLabel = `🎁 Claim ${rewardText}`;
 
     try {
@@ -225,8 +231,7 @@ export async function publishPacketToChannels(packetData, customCaption, targetC
                 message: formattedText,
                 claimUrl: claimLink,
                 buttonText: buttonLabel,
-                imageUrl: photoUrl, // ব্যাকএন্ড পিকচার ফিল্ড
-                photo: photoUrl    // ব্যাকএন্ড অল্টারনেটিভ ফিল্ড
+                photo: photoUrl
             })
         });
 
