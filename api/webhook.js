@@ -174,20 +174,18 @@ export default async function handler(req, res) {
     }
 
     // ====================================================================
-    // ২. CHANNEL PUBLISHING ROUTE (action: 'publish')
+    // CHANNEL PUBLISHING ROUTE (action: 'publish')
     // ====================================================================
     if (body.action === 'publish') {
-        const { channelIds, message: msgText, claimUrl, buttonText, photo, imageUrl } = body;
+        const { channelIds, message: msgText, claimUrl, buttonText, photo } = body;
 
         if (!channelIds || !Array.isArray(channelIds) || channelIds.length === 0) {
             return res.status(400).json({ ok: false, message: 'No target channels selected for publishing!' });
         }
 
-        // ফ্রন্টএন্ড থেকে আসা বাটন টেক্সট অথবা ডিফল্ট টেক্সট
-        const btnLabel = buttonText || "🎁 CLAIM RED PACKET NOW";
-
-        // পিকচার URL (ফ্রন্টএন্ড থেকে না আসলে ডিফল্ট লিঙ্ক)
-        const photoUrl = photo || imageUrl || "https://t.me/dogscoin_channel/360";
+        // ফ্রন্টএন্ড থেকে আসা ডায়নামিক বাটন টেক্সট
+        const btnLabel = buttonText || "🎁 CLAIM NOW";
+        const photoUrl = photo || "https://t.me/dogscoin_channel/360";
 
         const inlineKeyboard = claimUrl ? {
             inline_keyboard: [
@@ -199,7 +197,7 @@ export default async function handler(req, res) {
         const errorDetails = [];
 
         for (const chanId of channelIds) {
-            // ১. ছবি সহ পোস্ট করার জন্য sendPhoto ব্যবহার করা হচ্ছে
+            // ১. ছবি সহ পোস্ট পাঠানোর জন্য sendPhoto মেথড
             let sendRes = await callTelegram('sendPhoto', {
                 chat_id: chanId,
                 photo: photoUrl,
@@ -208,13 +206,13 @@ export default async function handler(req, res) {
                 reply_markup: inlineKeyboard
             });
 
-            // ২. যদি কোনো কারণে sendPhoto ফেল করে, তবে sendMessage fallback হিসেবে কাজ করবে
+            // ২. যদি sendPhoto কোনো কারণে ব্যর্থ হয় তবে sendMessage দিয়ে ছবি প্রিভিউ সহ পাঠানো
             if (!sendRes.ok) {
                 sendRes = await callTelegram('sendMessage', {
                     chat_id: chanId,
                     text: msgText,
                     parse_mode: 'HTML',
-                    disable_web_page_preview: false, // প্রিভিউ এনাবল রাখা হয়েছে
+                    disable_web_page_preview: false,
                     reply_markup: inlineKeyboard
                 });
             }
