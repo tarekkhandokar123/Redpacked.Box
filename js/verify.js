@@ -193,8 +193,21 @@ export async function publishPacketToChannels(packetData, customCaption, targetC
 
     const claimLink = `https://t.me/${BOT_USERNAME}/claim?startapp=${packetData.id}`;
     
+    // ১. কয়েনের পরিমাণ এবং নাম (কোন দাড়ি/কমা বা অতিরিক্ত বোল্ড ট্যাগ ছাড়া)
+    const rewardText = `${packetData.amountPerUser} ${packetData.tokenName}`;
+
+    // ২. কত জন ক্লাইম করতে পারবে
+    const totalUsersCount = packetData.totalUsers || packetData.maxUsers || packetData.totalCount || '';
+    const usersLine = totalUsersCount ? `${totalUsersCount} Users` : '';
+
+    // ৩. ক্যাপশন/টাইটেল
     const sanitizedCaption = (customCaption || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    const formattedText = `<b>🔥 EXCLUSIVE CRYPTO RED PACKET DROP 🔥</b>\n\n<b>🎁 TOKEN:</b> ${packetData.tokenName}\n<b>💰 REWARD PER USER:</b> ${packetData.amountPerUser}\n\n${sanitizedCaption}`;
+
+    // ৪. স্ক্রিনশট অনুযায়ী ৪ লাইনের পোস্ট তৈরি
+    const formattedText = `${rewardText}\n${usersLine}\n${sanitizedCaption}\n#Binance #RedPacket`.replace(/\n+/g, '\n').trim();
+
+    // ৫. বাটনের টেক্সট (বাটনেও কয়েন ও নাম শো করবে)
+    const buttonLabel = `🎁 Claim ${rewardText}`;
 
     try {
         notify("🚀 Publishing post to selected channel(s)...");
@@ -206,7 +219,8 @@ export async function publishPacketToChannels(packetData, customCaption, targetC
                 action: 'publish',
                 channelIds: targetChannelIds,
                 message: formattedText,
-                claimUrl: claimLink
+                claimUrl: claimLink,
+                buttonText: buttonLabel // বাটনের জন্য নতুন প্যারামিটার
             })
         });
 
