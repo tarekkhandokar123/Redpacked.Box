@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Red Packet Box - All-in-One App</title>
+    <title>Red Packet Box - All-in-One Mini App</title>
 
     <!-- Google Fonts Integration -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,7 +18,7 @@
     <script src="https://cdn.tgads.space/assets/js/adexium-widget.min.js"></script>
     <script type="text/javascript" src="https://cdn.okiksdelivery.com/assets/js/inp.min.js"></script>
     
-    <!-- Stylesheets -->
+    <!-- External Stylesheets -->
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="partner.css">
 </head>
@@ -27,7 +27,7 @@
     <!-- Global Toast Notification Container -->
     <div id="toast-container" class="toast-wrapper"></div>
 
-    <!-- Splash Screen Animation -->
+    <!-- Animated Splash Screen -->
     <div id="splash-screen" class="splash-backdrop">
         <div class="splash-content">
             <div class="splash-glow"></div>
@@ -63,7 +63,7 @@
         
         <!-- Header Section -->
         <header class="app-header">
-            <div class="user-profile" id="user-profile" onclick="AppRouter.switchPage('create-page')">
+            <div class="user-profile" id="user-profile" onclick="AppRouter.switchPage('page-dashboard')">
                 <div class="avatar-wrapper">
                     <img id="user-avatar" src="default-avatar.png" alt="User">
                     <span class="online-indicator"></span>
@@ -74,7 +74,7 @@
                 </div>
             </div>
 
-            <button class="publish-btn action-ripple" onclick="AppRouter.switchPage('create-page')">
+            <button class="publish-btn action-ripple" onclick="AppRouter.switchPage('page-create')">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
                     <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -90,14 +90,14 @@
         <main id="main-content" class="content-body">
             
             <!-- ==================================================== -->
-            <!-- PAGE 1: HOME PAGE (ALL USER ACTIVE RED PACKETS)     -->
+            <!-- PAGE 1: HOME PAGE (PUBLIC - FOR ALL USERS)           -->
             <!-- ==================================================== -->
-            <section id="home-page" class="page-view">
+            <section id="page-home" class="app-page">
                 
                 <!-- Single Packet Claim View (When opened directly via packet link) -->
                 <div id="view-single" class="view-card glass-panel" style="display: none;">
                     <div class="badges-row">
-                        <!-- Channel Badge (Displays Real Channel Title) -->
+                        <!-- Channel Badge (Shows Real Channel Name) -->
                         <div class="meta-badge channel-badge">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
@@ -182,25 +182,25 @@
                 </div>
 
                 <!-- Active Red Packets List (Visible to all users) -->
-                <div id="view-list" class="view-card glass-panel">
+                <div id="view-list" class="view-card glass-panel" style="display: block;">
                     <div class="section-heading">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3z"></path>
                         </svg>
-                        <h2>All Active Red Packets</h2>
+                        <h2>Active Red Packets</h2>
                     </div>
 
                     <div id="packet-list-container" class="packets-grid">
-                        <!-- Dynamic red packet items created by channel admins will render here -->
+                        <!-- Dynamic red packets render here -->
                     </div>
                 </div>
             </section>
 
             <!-- ==================================================== -->
-            <!-- PAGE 2: CHANNEL VERIFICATION & CONNECT PAGE         -->
+            <!-- PAGE 2: ADD & VERIFY CHANNEL (CHANNEL ADMIN PAGE 1)  -->
             <!-- ==================================================== -->
-            <section id="channels-page" class="page-view" style="display: none;">
-                <div class="view-section glass-panel">
+            <section id="page-channels" class="app-page" style="display: none;">
+                <div id="verification-view" class="view-section glass-panel" style="display: block;">
                     <h2>Add & Verify Channel</h2>
                     <p class="subtitle">Connect your Telegram Channel to prove ownership and start publishing Red Packets.</p>
                     
@@ -241,23 +241,21 @@
             </section>
 
             <!-- ==================================================== -->
-            <!-- PAGE 3: CREATE RED PACKET & PARTNER DASHBOARD       -->
+            <!-- PAGE 3: CREATE RED PACKET (CHANNEL ADMIN PAGE 2)     -->
             <!-- ==================================================== -->
-            <section id="create-page" class="page-view" style="display: none;">
-                
-                <!-- Channel Lock Warning (Shown if user has not added/verified a channel) -->
-                <div id="no-channel-warning" class="view-section" style="display: none; background: rgba(229, 57, 53, 0.15); border: 1px solid #E53935; border-radius: 12px; padding: 15px; text-align: center; margin-bottom: 15px;">
-                    <h3 style="color: #FF5252; margin: 0 0 5px 0;">⚠️ No Channel Connected!</h3>
-                    <p style="font-size: 12px; color: #ccc; margin: 0 0 12px 0;">You must verify and add your Telegram channel before creating Red Packets.</p>
-                    <button type="button" onclick="AppRouter.switchPage('channels-page')" class="primary-btn" style="padding: 8px 15px; font-size: 12px; margin: 0 auto; width: auto;">
-                        Add Channel Now
-                    </button>
-                </div>
-
-                <!-- Create Red Packet Section -->
-                <div id="create-packet-container" class="view-section glass-panel">
+            <section id="page-create" class="app-page" style="display: none;">
+                <div id="create-view" class="view-section glass-panel" style="display: block;">
                     <h2>Create Red Packet</h2>
-                    
+
+                    <!-- Lock Warning Box if No Channel Connected -->
+                    <div id="no-channel-warning" style="display: none; background: rgba(229, 57, 53, 0.15); border: 1px solid #E53935; border-radius: 12px; padding: 12px; text-align: center; margin-bottom: 15px;">
+                        <h3 style="color: #FF5252; margin: 0 0 5px 0; font-size: 14px;">⚠️ No Verified Channel Connected!</h3>
+                        <p style="font-size: 12px; color: #ccc; margin: 0 0 10px 0;">You must connect your channel before creating Red Packets.</p>
+                        <button type="button" onclick="AppRouter.switchPage('page-channels')" class="primary-btn" style="padding: 6px 12px; font-size: 12px; margin: 0 auto; width: auto;">
+                            Add Channel Now
+                        </button>
+                    </div>
+
                     <!-- Reward Notice Banner -->
                     <div style="background: rgba(76, 175, 80, 0.15); border: 1px solid #4CAF50; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 12px; color: #81C784;">
                         🎉 <strong>Earn $0.002 USDT</strong> for every single Red Packet open in your channel!
@@ -272,11 +270,11 @@
                         </div>
                         <div class="form-group">
                             <label>1. Token Name:</label>
-                            <input type="text" id="token-name" placeholder="e.g. USDT, PEPE, BTC" required>
+                            <input type="text" id="token-name" placeholder="e.g. USDT" value="USDT" required>
                         </div>
                         <div class="form-group">
                             <label>2. Amount per User:</label>
-                            <input type="text" id="token-amount" placeholder="e.g. 0.01 USDT or 3000 PEPE" required>
+                            <input type="text" id="token-amount" placeholder="e.g. 100 USDT" required>
                         </div>
                         <div class="form-group">
                             <label>3. Open Limit (Users):</label>
@@ -292,9 +290,25 @@
                         </button>
                     </form>
                 </div>
+            </section>
 
-                <!-- Partner Earnings & Analytics Dashboard -->
-                <div class="view-section glass-panel" style="margin-top: 25px;">
+            <!-- ==================================================== -->
+            <!-- PAGE 4: DASHBOARD & EARNINGS (CHANNEL ADMIN PAGE 3)  -->
+            <!-- ==================================================== -->
+            <section id="page-dashboard" class="app-page" style="display: none;">
+                <div id="dashboard-view" class="view-section glass-panel" style="display: block;">
+                    
+                    <!-- Channel Banner Selector -->
+                    <div class="channel-banner" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
+                        <div class="banner-left" style="display: flex; align-items: center; gap: 8px; width: 80%;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFD700" stroke-width="2"><path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8 2a2 2 0 0 1-4 0"/></svg>
+                            <span id="dash-selected-channel" style="font-size: 14px; font-weight: bold; color: #fff;">My Channel Dashboard</span>
+                        </div>
+                        <button type="button" onclick="AppRouter.switchPage('page-channels')" style="background: rgba(255, 215, 0, 0.2); border: 1px solid #FFD700; color: #FFD700; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; cursor: pointer;" title="Add Another Channel">
+                            +
+                        </button>
+                    </div>
+
                     <!-- Latest Active Red Packet Widget -->
                     <div id="latest-packet-widget" class="latest-card" style="display: none; background: linear-gradient(135deg, rgba(255,215,0,0.1), rgba(0,0,0,0.4)); border: 1px solid #FFD700; border-radius: 12px; padding: 15px; margin-bottom: 20px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -302,7 +316,7 @@
                             <span class="status-badge-active" style="font-size: 10px; background: #4CAF50; color: #fff; padding: 2px 6px; border-radius: 4px;">Live</span>
                         </div>
                         <h3 id="latest-rp-title" style="margin: 0 0 4px 0; font-size: 16px; color: #fff;">USDT Red Packet</h3>
-                        <p id="latest-rp-info" style="margin: 0 0 12px 0; font-size: 12px; color: #aaa;">Amount: 0.01 USDT | Limit: 500 Users</p>
+                        <p id="latest-rp-info" style="margin: 0 0 12px 0; font-size: 12px; color: #aaa;">Amount: 100 USDT | Limit: 500 Users</p>
                         
                         <div style="display: flex; gap: 10px;">
                             <button type="button" onclick="RedPacket_Module.copyClaimLink()" style="flex: 1; background: #333; color: #fff; border: 1px solid #555; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px;">
@@ -314,6 +328,7 @@
                         </div>
                     </div>
 
+                    <!-- Admin Analytics Grid -->
                     <div class="stats-grid">
                         <div class="stat-card">
                             <h3>Total Packets</h3>
@@ -324,57 +339,60 @@
                             <p id="stat-total-opens">0</p>
                         </div>
                         <div class="stat-card">
-                            <h3>Total Earnings ($0.002/open)</h3>
+                            <h3>Total Earnings</h3>
                             <p id="stat-total-earnings" data-rate="0.002">$0.000 USDT</p>
                         </div>
                     </div>
 
                     <!-- Red Packets History -->
                     <div class="packets-list-container" style="margin-top: 20px;">
-                        <h3 style="color: #FFD700; font-size: 15px; margin-bottom: 10px;">Created Packets History</h3>
+                        <h3 style="color: #FFD700; font-size: 15px; margin-bottom: 10px;">All Red Packets History</h3>
                         <div id="admin-packets-list">
                             <!-- Dynamic admin packets load here -->
                         </div>
                     </div>
 
-                    <!-- Balance & Withdrawal Module -->
-                    <div class="profile-tabs" style="margin-top: 25px;">
-                        <button class="tab-btn active" onclick="Withdraw_Module.switchTab('income-tab')">Income</button>
-                        <button class="tab-btn" onclick="Withdraw_Module.switchTab('withdraw-tab')">Withdraw</button>
+                    <!-- Income & Withdrawal Tabs (#profile-view module) -->
+                    <div id="profile-view" style="margin-top: 25px; display: block;">
+                        <div class="profile-tabs">
+                            <button class="tab-btn active" onclick="Withdraw_Module.switchTab('income-tab')">Income</button>
+                            <button class="tab-btn" onclick="Withdraw_Module.switchTab('withdraw-tab')">Withdraw</button>
+                        </div>
+
+                        <div id="income-tab" class="tab-content" style="margin-top: 15px;">
+                            <div class="balance-card">
+                                <h4>Available Balance</h4>
+                                <p id="bal-available">$0.000 USDT</p>
+                            </div>
+                            <div class="balance-card hold-card" style="margin-top: 10px;">
+                                <h4>Holding Balance (5-Day Hold)</h4>
+                                <p id="bal-holding">$0.000 USDT</p>
+                                <small>Unlocks automatically after 5 days.</small>
+                            </div>
+                            <div class="balance-card" style="margin-top: 10px;">
+                                <h4>Withdrawable Balance</h4>
+                                <p id="bal-withdrawable">$0.000 USDT</p>
+                            </div>
+                        </div>
+
+                        <div id="withdraw-tab" class="tab-content" style="display: none; margin-top: 15px;">
+                            <form id="withdraw-form">
+                                <div class="form-group">
+                                    <label>Binance UID:</label>
+                                    <input type="text" id="binance-uid" placeholder="Enter your Binance UID" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Amount (USDT):</label>
+                                    <input type="number" step="0.01" id="withdraw-amount" placeholder="Min $1.00" required>
+                                </div>
+                                <button type="submit" class="primary-btn">Withdraw Request</button>
+                            </form>
+                        </div>
                     </div>
 
-                    <div id="income-tab" class="tab-content" style="margin-top: 15px;">
-                        <div class="balance-card">
-                            <h4>Available Balance</h4>
-                            <p id="bal-available">$0.000 USDT</p>
-                        </div>
-                        <div class="balance-card hold-card" style="margin-top: 10px;">
-                            <h4>Holding Balance (5-Day Hold)</h4>
-                            <p id="bal-holding">$0.000 USDT</p>
-                            <small>Unlocks automatically after 5 days.</small>
-                        </div>
-                        <div class="balance-card" style="margin-top: 10px;">
-                            <h4>Withdrawable Balance</h4>
-                            <p id="bal-withdrawable">$0.000 USDT</p>
-                        </div>
-                    </div>
-
-                    <div id="withdraw-tab" class="tab-content" style="display: none; margin-top: 15px;">
-                        <form id="withdraw-form">
-                            <div class="form-group">
-                                <label>Binance UID:</label>
-                                <input type="text" id="binance-uid" placeholder="Enter your Binance UID" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Amount (USDT):</label>
-                                <input type="number" step="0.01" id="withdraw-amount" placeholder="Min $1.00" required>
-                            </div>
-                            <button type="submit" class="primary-btn">Request Withdraw</button>
-                        </form>
-                    </div>
                 </div>
-
             </section>
+
         </main>
 
         <!-- Post & Share Customizer Modal -->
@@ -384,13 +402,13 @@
                 
                 <div style="background: rgba(255, 215, 0, 0.15); border: 1px dashed #FFD700; border-radius: 8px; padding: 10px; margin-bottom: 15px; display: flex; justify-content: space-around; text-align: center;">
                     <div>
-                        <small style="color: #aaa; font-size: 10px; display: block;">TOKEN</small>
+                        <small style="color: #aaa; font-size: 10px; display: block;">TOKEN NAME</small>
                         <strong id="modal-token-name" style="color: #FFD700; font-size: 14px;">USDT</strong>
                     </div>
                     <div style="border-left: 1px solid rgba(255,255,255,0.2);"></div>
                     <div>
-                        <small style="color: #aaa; font-size: 10px; display: block;">REWARD</small>
-                        <strong id="modal-token-amt" style="color: #FFD700; font-size: 14px;">0.01 USDT</strong>
+                        <small style="color: #aaa; font-size: 10px; display: block;">REWARD PER USER</small>
+                        <strong id="modal-token-amt" style="color: #FFD700; font-size: 14px;">100 USDT</strong>
                     </div>
                 </div>
 
@@ -400,9 +418,9 @@
                 </div>
 
                 <div class="form-group" style="margin-bottom: 20px;">
-                    <label style="font-size: 12px; color: #ccc; margin-bottom: 8px; display: block;">Target Channel:</label>
+                    <label style="font-size: 12px; color: #ccc; margin-bottom: 8px; display: block;">Select Target Channel(s):</label>
                     <div id="modal-channel-list" style="max-height: 120px; overflow-y: auto; background: #121212; padding: 10px; border-radius: 8px; border: 1px solid #333;">
-                        <!-- Real connected channels checklist populated via JS -->
+                        <!-- Dynamically populated via JS -->
                     </div>
                 </div>
 
@@ -435,50 +453,73 @@
             </div>
         </footer>
 
-        <!-- Bottom Navigation Bar (3 Primary Pages Router) -->
+        <!-- Bottom Navigation Bar (4 Pages) -->
         <nav class="bottom-nav">
-            <button class="bottom-nav-item active" id="nav-home" onclick="AppRouter.switchPage('home-page')">
+            <button class="bottom-nav-item active" id="nav-home" onclick="AppRouter.switchPage('page-home')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                 <span>Home</span>
             </button>
-            <button class="bottom-nav-item" id="nav-channels" onclick="AppRouter.switchPage('channels-page')">
+            <button class="bottom-nav-item" id="nav-channels" onclick="AppRouter.switchPage('page-channels')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8 2a2 2 0 0 1-4 0"/></svg>
                 <span>Add Channel</span>
             </button>
-            <button class="bottom-nav-item" id="nav-create" onclick="AppRouter.switchPage('create-page')">
+            <button class="bottom-nav-item" id="nav-create" onclick="AppRouter.switchPage('page-create')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                <span>Create & Earn</span>
+                <span>Create Packet</span>
+            </button>
+            <button class="bottom-nav-item" id="nav-dashboard" onclick="AppRouter.switchPage('page-dashboard')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <span>Dashboard</span>
             </button>
         </nav>
     </div>
 
-    <!-- Page Router & Initialization Script -->
+    <!-- Page Router & Compatibility Bridge -->
     <script>
         const AppRouter = {
             switchPage(pageId) {
-                document.querySelectorAll('.page-view').forEach(el => el.style.display = 'none');
+                // Hide all app-pages
+                document.querySelectorAll('.app-page').forEach(el => el.style.display = 'none');
                 document.querySelectorAll('.bottom-nav-item').forEach(el => el.classList.remove('active'));
                 
                 const targetPage = document.getElementById(pageId);
-                if (targetPage) targetPage.style.display = 'block';
+                if (targetPage) {
+                    targetPage.style.display = 'block';
+                    // Force inner view-section visibility
+                    targetPage.querySelectorAll('.view-section, .view-card').forEach(sec => {
+                        if (sec.id !== 'view-single') {
+                            sec.style.display = 'block';
+                        }
+                    });
+                }
 
-                if (pageId === 'home-page') document.getElementById('nav-home').classList.add('active');
-                if (pageId === 'channels-page') document.getElementById('nav-channels').classList.add('active');
-                if (pageId === 'create-page') document.getElementById('nav-create').classList.add('active');
+                // Update Bottom Nav active status
+                const navKey = pageId.replace('page-', '');
+                const activeBtn = document.getElementById('nav-' + navKey);
+                if (activeBtn) activeBtn.classList.add('active');
             }
         };
 
-        // Splash screen auto-dismissal
+        // Bridge for partner.js Router calls
+        window.Router = {
+            switchView(viewId) {
+                if (viewId === 'verification-view') AppRouter.switchPage('page-channels');
+                else if (viewId === 'create-view') AppRouter.switchPage('page-create');
+                else if (viewId === 'dashboard-view' || viewId === 'profile-view') AppRouter.switchPage('page-dashboard');
+            }
+        };
+
+        // Splash Screen dismissal
         document.addEventListener("DOMContentLoaded", () => {
             setTimeout(() => {
                 const splash = document.getElementById("splash-screen");
                 if (splash) splash.style.display = "none";
                 document.getElementById("app-container").style.display = "block";
-            }, 1000);
+            }, 800);
         });
     </script>
 
-    <!-- Modular JavaScript Imports -->
+    <!-- Modular JavaScript File Imports -->
     <script type="module" src="js/app.js"></script>
     <script type="module" src="js/ads-manager.js"></script>
     <script type="module" src="js/partner.js"></script>
@@ -486,4 +527,4 @@
     <script type="module" src="js/withdraw.js"></script>
     <script type="module" src="js/verify.js"></script>
 </body>
-    </html>
+                                                                                                       </html>
