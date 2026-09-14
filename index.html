@@ -18,7 +18,7 @@
     <script src="https://cdn.tgads.space/assets/js/adexium-widget.min.js"></script>
     <script type="text/javascript" src="https://cdn.okiksdelivery.com/assets/js/inp.min.js"></script>
     
-    <!-- Unified Stylesheets -->
+    <!-- Stylesheets -->
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="partner.css">
 </head>
@@ -27,7 +27,7 @@
     <!-- Global Toast Notification Container -->
     <div id="toast-container" class="toast-wrapper"></div>
 
-    <!-- Animated Splash Screen -->
+    <!-- Splash Screen Animation -->
     <div id="splash-screen" class="splash-backdrop">
         <div class="splash-content">
             <div class="splash-glow"></div>
@@ -63,7 +63,7 @@
         
         <!-- Header Section -->
         <header class="app-header">
-            <div class="user-profile" id="user-profile">
+            <div class="user-profile" id="user-profile" onclick="AppRouter.switchPage('create-page')">
                 <div class="avatar-wrapper">
                     <img id="user-avatar" src="default-avatar.png" alt="User">
                     <span class="online-indicator"></span>
@@ -86,18 +86,18 @@
             </button>
         </header>
 
-        <!-- Main Dynamic Pages Container -->
+        <!-- Dynamic Main Content Pages -->
         <main id="main-content" class="content-body">
             
-            <!-- ========================================== -->
-            <!-- PAGE 1: HOME (ALL USER ACTIVE RED PACKETS)  -->
-            <!-- ========================================== -->
+            <!-- ==================================================== -->
+            <!-- PAGE 1: HOME PAGE (ALL USER ACTIVE RED PACKETS)     -->
+            <!-- ==================================================== -->
             <section id="home-page" class="page-view">
                 
-                <!-- Single Packet Claim View (When opened from a specific channel link) -->
+                <!-- Single Packet Claim View (When opened directly via packet link) -->
                 <div id="view-single" class="view-card glass-panel" style="display: none;">
                     <div class="badges-row">
-                        <!-- Dynamic Channel Badge (Real Channel Name) -->
+                        <!-- Channel Badge (Displays Real Channel Title) -->
                         <div class="meta-badge channel-badge">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
@@ -116,7 +116,7 @@
                         </div>
                     </div>
 
-                    <!-- Interactive Red Packet UI -->
+                    <!-- Interactive Red Packet Core UI -->
                     <div class="red-packet-container">
                         <div class="ambient-glow"></div>
                         <div class="gift-box interactive-bounce" id="gift-box-btn">
@@ -144,11 +144,21 @@
 
                         <button class="open-btn primary-glow-btn" id="open-btn">
                             <span>OPEN RED PACKET</span>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
                         </button>
                         
                         <div class="limit-counter-card">
-                            <div class="counter-header">Claim Progress</div>
+                            <div class="counter-header">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                </svg>
+                                <span>Claim Progress</span>
+                            </div>
                             <div class="counter-progress-bar">
                                 <div class="progress-fill" id="rp-progress-fill" style="width: 0%;"></div>
                             </div>
@@ -157,28 +167,44 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Share Button -->
+                    <button class="share-btn secondary-btn" id="share-btn" style="display: none;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="18" cy="5" r="3"></circle>
+                            <circle cx="6" cy="12" r="3"></circle>
+                            <circle cx="18" cy="19" r="3"></circle>
+                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                        </svg>
+                        <span>Share to Friends</span>
+                    </button>
                 </div>
 
-                <!-- All Active Red Packets List (Visible to all users) -->
-                <div class="view-card glass-panel">
+                <!-- Active Red Packets List (Visible to all users) -->
+                <div id="view-list" class="view-card glass-panel">
                     <div class="section-heading">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3z"></path></svg>
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3z"></path>
+                        </svg>
                         <h2>All Active Red Packets</h2>
                     </div>
+
                     <div id="packet-list-container" class="packets-grid">
-                        <!-- Dynamic active packets from all channel admins render here -->
+                        <!-- Dynamic red packet items created by channel admins will render here -->
                     </div>
                 </div>
             </section>
 
-            <!-- ========================================== -->
-            <!-- PAGE 2: CHANNEL VERIFICATION & SETUP        -->
-            <!-- ========================================== -->
+            <!-- ==================================================== -->
+            <!-- PAGE 2: CHANNEL VERIFICATION & CONNECT PAGE         -->
+            <!-- ==================================================== -->
             <section id="channels-page" class="page-view" style="display: none;">
-                <div class="view-section">
+                <div class="view-section glass-panel">
                     <h2>Add & Verify Channel</h2>
-                    <p class="subtitle">তৈরি করা রেড প্যাকেট পাবলিক করতে আপনার টেলিগ্রাম চ্যানেল ভেরিফাই করুন।</p>
+                    <p class="subtitle">Connect your Telegram Channel to prove ownership and start publishing Red Packets.</p>
                     
+                    <!-- Bot Requirements Card -->
                     <div class="bot-rules-card" style="background: rgba(255, 215, 0, 0.08); border: 1px solid rgba(255, 215, 0, 0.3); padding: 12px 15px; border-radius: 12px; margin-bottom: 20px;">
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
                             <span style="font-weight: bold; color: #FFD700; font-size: 13px;">🤖 Bot Username: @REDPACKETBOXBOT</span>
@@ -187,9 +213,9 @@
                             </button>
                         </div>
                         <ul style="margin: 0; padding-left: 18px; font-size: 12px; color: #ccc; line-height: 1.6;">
-                            <li>আপনি অবশ্যই চ্যানেলের <strong>Owner (মালিক)</strong> হতে হবে।</li>
-                            <li>কমপক্ষে <strong>500 Subscribers</strong> থাকতে হবে।</li>
-                            <li>বটকে এডমিন বানাতে হবে: <strong>Post, Edit & Delete Messages</strong> পারমিশন সহ।</li>
+                            <li>You MUST be the <strong>Owner (Creator)</strong> of the channel.</li>
+                            <li>Minimum <strong>500 Subscribers</strong> required.</li>
+                            <li>Add bot as Admin with permissions: <strong>Post Messages, Edit Messages, Delete Messages</strong>.</li>
                         </ul>
                     </div>
 
@@ -199,6 +225,7 @@
                             <input type="text" id="chan-link" placeholder="e.g. @YourChannel or https://t.me/YourChannel" required>
                         </div>
                         <button type="submit" class="primary-btn">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                             Verify & Connect Channel
                         </button>
                     </form>
@@ -207,31 +234,31 @@
                     <div style="margin-top: 25px;">
                         <h3 style="color: #FFD700; font-size: 15px; margin-bottom: 10px;">Your Connected Channels</h3>
                         <div id="my-channels-list">
-                            <!-- Dynamic list of user's connected channels -->
+                            <!-- Dynamic list of user's connected channels renders here -->
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- ========================================== -->
-            <!-- PAGE 3: CREATE PACKET & PARTNER DASHBOARD   -->
-            <!-- ========================================== -->
+            <!-- ==================================================== -->
+            <!-- PAGE 3: CREATE RED PACKET & PARTNER DASHBOARD       -->
+            <!-- ==================================================== -->
             <section id="create-page" class="page-view" style="display: none;">
                 
-                <!-- Channel Status Warning (Locked if no channel connected) -->
+                <!-- Channel Lock Warning (Shown if user has not added/verified a channel) -->
                 <div id="no-channel-warning" class="view-section" style="display: none; background: rgba(229, 57, 53, 0.15); border: 1px solid #E53935; border-radius: 12px; padding: 15px; text-align: center; margin-bottom: 15px;">
                     <h3 style="color: #FF5252; margin: 0 0 5px 0;">⚠️ No Channel Connected!</h3>
-                    <p style="font-size: 12px; color: #ccc; margin: 0 0 12px 0;">রেড প্যাকেট তৈরি করতে আপনাকে অবশ্যই আগে আপনার টেলিগ্রাম চ্যানেল ভেরিফাই ও অ্যাড করতে হবে।</p>
-                    <button type="button" onclick="AppRouter.switchPage('channels-page')" class="primary-btn" style="padding: 8px 15px; font-size: 12px;">
+                    <p style="font-size: 12px; color: #ccc; margin: 0 0 12px 0;">You must verify and add your Telegram channel before creating Red Packets.</p>
+                    <button type="button" onclick="AppRouter.switchPage('channels-page')" class="primary-btn" style="padding: 8px 15px; font-size: 12px; margin: 0 auto; width: auto;">
                         Add Channel Now
                     </button>
                 </div>
 
-                <!-- Create Form (Unlocked when Channel is connected) -->
-                <div id="create-packet-container" class="view-section">
+                <!-- Create Red Packet Section -->
+                <div id="create-packet-container" class="view-section glass-panel">
                     <h2>Create Red Packet</h2>
                     
-                    <!-- Reward Rate Banner -->
+                    <!-- Reward Notice Banner -->
                     <div style="background: rgba(76, 175, 80, 0.15); border: 1px solid #4CAF50; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 12px; color: #81C784;">
                         🎉 <strong>Earn $0.002 USDT</strong> for every single Red Packet open in your channel!
                     </div>
@@ -239,7 +266,7 @@
                     <form id="create-packet-form">
                         <div class="form-group">
                             <label>Select Channel:</label>
-                            <select id="channel-dropdown" style="width: 100%; background: #121212; color: #fff; border: 1px solid #333; padding: 10px; border-radius: 8px;" required>
+                            <select id="channel-dropdown" style="width: 100%; background: #121212; color: #fff; border: 1px solid #333; padding: 10px; border-radius: 8px; font-size: 13px;" required>
                                 <option value="">Select Connected Channel...</option>
                             </select>
                         </div>
@@ -260,13 +287,33 @@
                             <input type="url" id="binance-link" placeholder="https://s.binance.com/..." required>
                         </div>
                         <button type="submit" id="publish-submit-btn" class="primary-btn">
-                            Create & Post Packet
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                            Create & Publish Packet
                         </button>
                     </form>
                 </div>
 
-                <!-- Partner Earnings & Stats Dashboard -->
-                <div class="view-section" style="margin-top: 25px;">
+                <!-- Partner Earnings & Analytics Dashboard -->
+                <div class="view-section glass-panel" style="margin-top: 25px;">
+                    <!-- Latest Active Red Packet Widget -->
+                    <div id="latest-packet-widget" class="latest-card" style="display: none; background: linear-gradient(135deg, rgba(255,215,0,0.1), rgba(0,0,0,0.4)); border: 1px solid #FFD700; border-radius: 12px; padding: 15px; margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 11px; color: #FFD700; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">🔥 Latest Active Red Packet</span>
+                            <span class="status-badge-active" style="font-size: 10px; background: #4CAF50; color: #fff; padding: 2px 6px; border-radius: 4px;">Live</span>
+                        </div>
+                        <h3 id="latest-rp-title" style="margin: 0 0 4px 0; font-size: 16px; color: #fff;">USDT Red Packet</h3>
+                        <p id="latest-rp-info" style="margin: 0 0 12px 0; font-size: 12px; color: #aaa;">Amount: 0.01 USDT | Limit: 500 Users</p>
+                        
+                        <div style="display: flex; gap: 10px;">
+                            <button type="button" onclick="RedPacket_Module.copyClaimLink()" style="flex: 1; background: #333; color: #fff; border: 1px solid #555; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                                📋 Copy Link
+                            </button>
+                            <button type="button" onclick="RedPacket_Module.openPostModal()" style="flex: 1; background: #FFD700; color: #000; border: none; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                                🚀 Post / Share
+                            </button>
+                        </div>
+                    </div>
+
                     <div class="stats-grid">
                         <div class="stat-card">
                             <h3>Total Packets</h3>
@@ -282,20 +329,37 @@
                         </div>
                     </div>
 
-                    <!-- Withdrawal & Profile Section -->
-                    <div class="profile-tabs" style="margin-top: 20px;">
-                        <button class="tab-btn active" onclick="Withdraw_Module.switchTab('income-tab')">Balance</button>
+                    <!-- Red Packets History -->
+                    <div class="packets-list-container" style="margin-top: 20px;">
+                        <h3 style="color: #FFD700; font-size: 15px; margin-bottom: 10px;">Created Packets History</h3>
+                        <div id="admin-packets-list">
+                            <!-- Dynamic admin packets load here -->
+                        </div>
+                    </div>
+
+                    <!-- Balance & Withdrawal Module -->
+                    <div class="profile-tabs" style="margin-top: 25px;">
+                        <button class="tab-btn active" onclick="Withdraw_Module.switchTab('income-tab')">Income</button>
                         <button class="tab-btn" onclick="Withdraw_Module.switchTab('withdraw-tab')">Withdraw</button>
                     </div>
 
-                    <div id="income-tab" class="tab-content" style="margin-top: 10px;">
+                    <div id="income-tab" class="tab-content" style="margin-top: 15px;">
                         <div class="balance-card">
+                            <h4>Available Balance</h4>
+                            <p id="bal-available">$0.000 USDT</p>
+                        </div>
+                        <div class="balance-card hold-card" style="margin-top: 10px;">
+                            <h4>Holding Balance (5-Day Hold)</h4>
+                            <p id="bal-holding">$0.000 USDT</p>
+                            <small>Unlocks automatically after 5 days.</small>
+                        </div>
+                        <div class="balance-card" style="margin-top: 10px;">
                             <h4>Withdrawable Balance</h4>
                             <p id="bal-withdrawable">$0.000 USDT</p>
                         </div>
                     </div>
 
-                    <div id="withdraw-tab" class="tab-content" style="display: none; margin-top: 10px;">
+                    <div id="withdraw-tab" class="tab-content" style="display: none; margin-top: 15px;">
                         <form id="withdraw-form">
                             <div class="form-group">
                                 <label>Binance UID:</label>
@@ -313,7 +377,7 @@
             </section>
         </main>
 
-        <!-- Dynamic Modal: Post & Share Customizer -->
+        <!-- Post & Share Customizer Modal -->
         <div id="post-publish-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; padding: 15px;">
             <div class="modal-content" style="background: #1e1e1e; border: 1px solid #FFD700; border-radius: 16px; width: 100%; max-width: 400px; padding: 20px; color: #fff;">
                 <h3 style="margin-top:0; color:#FFD700; font-size:18px; text-align:center;">Customize & Publish Post</h3>
@@ -338,7 +402,7 @@
                 <div class="form-group" style="margin-bottom: 20px;">
                     <label style="font-size: 12px; color: #ccc; margin-bottom: 8px; display: block;">Target Channel:</label>
                     <div id="modal-channel-list" style="max-height: 120px; overflow-y: auto; background: #121212; padding: 10px; border-radius: 8px; border: 1px solid #333;">
-                        <!-- Real channel names check-list populated via JS -->
+                        <!-- Real connected channels checklist populated via JS -->
                     </div>
                 </div>
 
@@ -358,7 +422,10 @@
             <div class="footer-card">
                 <div class="footer-row">
                     <a href="https://t.me/BTCREDPACKETBOX" target="_blank" class="footer-pill-btn official-channel-btn">
-                        <span>অফিসিয়াল চ্যানেল</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21.198 2.433a2.242 2.242 0 0 0-1.022.215l-16.5 7.5a2.25 2.25 0 0 0 .126 4.137l4.015 1.338 1.54 4.885a1.5 1.5 0 0 0 2.65.418l2.67-3.23 4.316 3.18a2.25 2.25 0 0 0 3.54-1.48l3.1-15.5a2.25 2.25 0 0 0-2.435-2.663z"></path>
+                        </svg>
+                        <span>Official Channel</span>
                     </a>
                 </div>
                 <div class="footer-sub-bar">
@@ -368,24 +435,24 @@
             </div>
         </footer>
 
-        <!-- Bottom Fixed Navigation Bar (3 Pages Router) -->
+        <!-- Bottom Navigation Bar (3 Primary Pages Router) -->
         <nav class="bottom-nav">
             <button class="bottom-nav-item active" id="nav-home" onclick="AppRouter.switchPage('home-page')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                 <span>Home</span>
             </button>
             <button class="bottom-nav-item" id="nav-channels" onclick="AppRouter.switchPage('channels-page')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8 2a2 2 0 0 1-4 0"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8 2a2 2 0 0 1-4 0"/></svg>
                 <span>Add Channel</span>
             </button>
             <button class="bottom-nav-item" id="nav-create" onclick="AppRouter.switchPage('create-page')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
                 <span>Create & Earn</span>
             </button>
         </nav>
     </div>
 
-    <!-- Script to handle Router & App Execution -->
+    <!-- Page Router & Initialization Script -->
     <script>
         const AppRouter = {
             switchPage(pageId) {
@@ -401,7 +468,7 @@
             }
         };
 
-        // Auto hide splash screen
+        // Splash screen auto-dismissal
         document.addEventListener("DOMContentLoaded", () => {
             setTimeout(() => {
                 const splash = document.getElementById("splash-screen");
@@ -411,7 +478,7 @@
         });
     </script>
 
-    <!-- Modular Script Imports -->
+    <!-- Modular JavaScript Imports -->
     <script type="module" src="js/app.js"></script>
     <script type="module" src="js/ads-manager.js"></script>
     <script type="module" src="js/partner.js"></script>
@@ -419,4 +486,4 @@
     <script type="module" src="js/withdraw.js"></script>
     <script type="module" src="js/verify.js"></script>
 </body>
-</html>
+    </html>
