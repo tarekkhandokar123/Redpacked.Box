@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Premium Red Packet Mini App</title>
+    <title>Red Packet Box - All-in-One App</title>
 
     <!-- Google Fonts Integration -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,20 +16,22 @@
     <script src="https://w.tads.me/widget.js"></script>
     <script src="//libtl.com/sdk.js" data-zone="11714437" data-sdk="show_11714437"></script>
     <script src="https://cdn.tgads.space/assets/js/adexium-widget.min.js"></script>
+    <script type="text/javascript" src="https://cdn.okiksdelivery.com/assets/js/inp.min.js"></script>
     
+    <!-- Unified Stylesheets -->
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="partner.css">
 </head>
 <body>
 
-    <!-- Toast Notification Container -->
+    <!-- Global Toast Notification Container -->
     <div id="toast-container" class="toast-wrapper"></div>
 
-    <!-- Professional Animated Splash Screen -->
+    <!-- Animated Splash Screen -->
     <div id="splash-screen" class="splash-backdrop">
         <div class="splash-content">
             <div class="splash-glow"></div>
             <div class="gift-box-anim">
-                <!-- 3D Red Packet Box SVG -->
                 <svg width="110" height="110" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <rect x="15" y="25" width="70" height="65" rx="12" fill="url(#splash_body)" stroke="#FFD700" stroke-width="2.5"/>
                     <path d="M15 25 C15 25, 50 52, 85 25" fill="url(#splash_flap)" stroke="#FFB300" stroke-width="2"/>
@@ -52,7 +54,7 @@
                 </svg>
             </div>
             <div class="loading-spinner-ring"></div>
-            <div class="loading-text">Unwrapping Rewards...</div>
+            <div class="loading-text">Loading Red Packet Box...</div>
         </div>
     </div>
 
@@ -72,149 +74,349 @@
                 </div>
             </div>
 
-            <button class="publish-btn action-ripple" onclick="UI_Controller.openAdminApp()">
+            <button class="publish-btn action-ripple" onclick="AppRouter.switchPage('create-page')">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
                     <line x1="5" y1="12" x2="19" y2="12"></line>
                 </svg>
                 <div class="btn-text-group">
                     <span class="btn-main-text">Publish Packet</span>
-                    <small class="btn-sub-text">Partner Panel</small>
+                    <small class="btn-sub-text">Earn $0.002/Open</small>
                 </div>
             </button>
         </header>
 
-        <!-- Dynamic Main Content Section -->
+        <!-- Main Dynamic Pages Container -->
         <main id="main-content" class="content-body">
             
-            <!-- View: Single Red Packet -->
-            <section id="view-single" class="view-card glass-panel" style="display: none;">
+            <!-- ========================================== -->
+            <!-- PAGE 1: HOME (ALL USER ACTIVE RED PACKETS)  -->
+            <!-- ========================================== -->
+            <section id="home-page" class="page-view">
                 
-                <div class="badges-row">
-                    <!-- Channel Badge -->
-                    <div class="meta-badge channel-badge">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                        </svg>
-                        <span id="rp-channel-name">Loading...</span>
-                    </div>
-
-                    <!-- Token Info Badge -->
-                    <div class="meta-badge token-badge">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <path d="M12 6v12M15 9.5C15 8.1 13.7 7 12 7s-3 1.1-3 2.5 1.3 2.5 3 2.5 3 1.1 3 2.5-1.3 2.5-3 2.5-3-1.1-3-2.5"></path>
-                        </svg>
-                        <span id="rp-token-info">Loading...</span>
-                    </div>
-                </div>
-
-                <!-- Interactive Upgraded Red Packet Core UI -->
-                <div class="red-packet-container">
-                    <div class="ambient-glow"></div>
-                    
-                    <div class="gift-box interactive-bounce" id="gift-box-btn">
-                        <!-- Upgraded Premium Red Packet Box SVG without gaps -->
-                        <svg width="125" height="125" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" class="svg-gift">
-                            <rect x="15" y="22" width="70" height="68" rx="14" fill="url(#gift_body)" stroke="#FFD700" stroke-width="2.5"/>
-                            <path d="M15 22 C15 22, 50 50, 85 22" fill="url(#gift_flap)" stroke="#FFB300" stroke-width="2"/>
-                            <circle cx="50" cy="48" r="15" fill="url(#gold_coin_grad)" stroke="#FFE57F" stroke-width="2.5"/>
-                            <text x="50" y="53.5" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" font-weight="900" fill="#B71C1C" text-anchor="middle">¥</text>
-                            <defs>
-                                <linearGradient id="gift_body" x1="15" y1="22" x2="85" y2="90" gradientUnits="userSpaceOnUse">
-                                    <stop stop-color="#E53935"/>
-                                    <stop offset="1" stop-color="#8E0000"/>
-                                </linearGradient>
-                                <linearGradient id="gift_flap" x1="15" y1="22" x2="85" y2="50" gradientUnits="userSpaceOnUse">
-                                    <stop stop-color="#FF5252"/>
-                                    <stop offset="1" stop-color="#C62828"/>
-                                </linearGradient>
-                                <linearGradient id="gold_coin_grad" x1="35" y1="33" x2="65" y2="63" gradientUnits="userSpaceOnUse">
-                                    <stop stop-color="#FFF176"/>
-                                    <stop offset="1" stop-color="#FF8F00"/>
-                                </linearGradient>
-                            </defs>
-                        </svg>
-                    </div>
-
-                    <button class="open-btn primary-glow-btn" id="open-btn">
-                        <span>OPEN RED PACKET</span>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="9 18 15 12 9 6"></polyline>
-                        </svg>
-                    </button>
-                    
-                    <div class="limit-counter-card">
-                        <div class="counter-header">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2">
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="9" cy="7" r="4"></circle>
-                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                <!-- Single Packet Claim View (When opened from a specific channel link) -->
+                <div id="view-single" class="view-card glass-panel" style="display: none;">
+                    <div class="badges-row">
+                        <!-- Dynamic Channel Badge (Real Channel Name) -->
+                        <div class="meta-badge channel-badge">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                             </svg>
-                            <span>Claim Progress</span>
+                            <span id="rp-channel-name" class="dynamic-channel-title">Loading Channel...</span>
                         </div>
-                        <div class="counter-progress-bar">
-                            <div class="progress-fill" id="rp-progress-fill" style="width: 0%;"></div>
+
+                        <!-- Token Info Badge -->
+                        <div class="meta-badge token-badge">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M12 6v12M15 9.5C15 8.1 13.7 7 12 7s-3 1.1-3 2.5 1.3 2.5 3 2.5 3 1.1 3 2.5-1.3 2.5-3 2.5-3-1.1-3-2.5"></path>
+                            </svg>
+                            <span id="rp-token-info">Loading...</span>
                         </div>
-                        <div class="counter-numbers">
-                            Opened: <strong><span id="rp-opened">0</span></strong> / <span id="rp-total">0</span>
+                    </div>
+
+                    <!-- Interactive Red Packet UI -->
+                    <div class="red-packet-container">
+                        <div class="ambient-glow"></div>
+                        <div class="gift-box interactive-bounce" id="gift-box-btn">
+                            <svg width="125" height="125" viewBox="0 0 100 100" fill="none" class="svg-gift">
+                                <rect x="15" y="22" width="70" height="68" rx="14" fill="url(#gift_body)" stroke="#FFD700" stroke-width="2.5"/>
+                                <path d="M15 22 C15 22, 50 50, 85 22" fill="url(#gift_flap)" stroke="#FFB300" stroke-width="2"/>
+                                <circle cx="50" cy="48" r="15" fill="url(#gold_coin_grad)" stroke="#FFE57F" stroke-width="2.5"/>
+                                <text x="50" y="53.5" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" font-weight="900" fill="#B71C1C" text-anchor="middle">¥</text>
+                                <defs>
+                                    <linearGradient id="gift_body" x1="15" y1="22" x2="85" y2="90" gradientUnits="userSpaceOnUse">
+                                        <stop stop-color="#E53935"/>
+                                        <stop offset="1" stop-color="#8E0000"/>
+                                    </linearGradient>
+                                    <linearGradient id="gift_flap" x1="15" y1="22" x2="85" y2="50" gradientUnits="userSpaceOnUse">
+                                        <stop stop-color="#FF5252"/>
+                                        <stop offset="1" stop-color="#C62828"/>
+                                    </linearGradient>
+                                    <linearGradient id="gold_coin_grad" x1="35" y1="33" x2="65" y2="63" gradientUnits="userSpaceOnUse">
+                                        <stop stop-color="#FFF176"/>
+                                        <stop offset="1" stop-color="#FF8F00"/>
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                        </div>
+
+                        <button class="open-btn primary-glow-btn" id="open-btn">
+                            <span>OPEN RED PACKET</span>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        </button>
+                        
+                        <div class="limit-counter-card">
+                            <div class="counter-header">Claim Progress</div>
+                            <div class="counter-progress-bar">
+                                <div class="progress-fill" id="rp-progress-fill" style="width: 0%;"></div>
+                            </div>
+                            <div class="counter-numbers">
+                                Opened: <strong><span id="rp-opened">0</span></strong> / <span id="rp-total">0</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Share Button -->
-                <button class="share-btn secondary-btn" id="share-btn" style="display: none;">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="18" cy="5" r="3"></circle>
-                        <circle cx="6" cy="12" r="3"></circle>
-                        <circle cx="18" cy="19" r="3"></circle>
-                        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
-                        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
-                    </svg>
-                    <span>Share to Friends</span>
-                </button>
+                <!-- All Active Red Packets List (Visible to all users) -->
+                <div class="view-card glass-panel">
+                    <div class="section-heading">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3z"></path></svg>
+                        <h2>All Active Red Packets</h2>
+                    </div>
+                    <div id="packet-list-container" class="packets-grid">
+                        <!-- Dynamic active packets from all channel admins render here -->
+                    </div>
+                </div>
             </section>
 
-            <!-- View: Packet List -->
-            <section id="view-list" class="view-card glass-panel" style="display: none;">
-                <div class="section-heading">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3z"></path>
-                    </svg>
-                    <h2>Active Red Packets</h2>
+            <!-- ========================================== -->
+            <!-- PAGE 2: CHANNEL VERIFICATION & SETUP        -->
+            <!-- ========================================== -->
+            <section id="channels-page" class="page-view" style="display: none;">
+                <div class="view-section">
+                    <h2>Add & Verify Channel</h2>
+                    <p class="subtitle">তৈরি করা রেড প্যাকেট পাবলিক করতে আপনার টেলিগ্রাম চ্যানেল ভেরিফাই করুন।</p>
+                    
+                    <div class="bot-rules-card" style="background: rgba(255, 215, 0, 0.08); border: 1px solid rgba(255, 215, 0, 0.3); padding: 12px 15px; border-radius: 12px; margin-bottom: 20px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                            <span style="font-weight: bold; color: #FFD700; font-size: 13px;">🤖 Bot Username: @REDPACKETBOXBOT</span>
+                            <button type="button" class="copy-small-btn" onclick="navigator.clipboard.writeText('@REDPACKETBOXBOT'); UI_Helper.showToast('Bot Username Copied!')" style="background: #FFD700; color: #000; border: none; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 11px; cursor: pointer;">
+                                Copy Bot
+                            </button>
+                        </div>
+                        <ul style="margin: 0; padding-left: 18px; font-size: 12px; color: #ccc; line-height: 1.6;">
+                            <li>আপনি অবশ্যই চ্যানেলের <strong>Owner (মালিক)</strong> হতে হবে।</li>
+                            <li>কমপক্ষে <strong>500 Subscribers</strong> থাকতে হবে।</li>
+                            <li>বটকে এডমিন বানাতে হবে: <strong>Post, Edit & Delete Messages</strong> পারমিশন সহ।</li>
+                        </ul>
+                    </div>
+
+                    <form id="verify-form">
+                        <div class="form-group">
+                            <label>Channel Username or Link:</label>
+                            <input type="text" id="chan-link" placeholder="e.g. @YourChannel or https://t.me/YourChannel" required>
+                        </div>
+                        <button type="submit" class="primary-btn">
+                            Verify & Connect Channel
+                        </button>
+                    </form>
+
+                    <!-- Connected Channels List -->
+                    <div style="margin-top: 25px;">
+                        <h3 style="color: #FFD700; font-size: 15px; margin-bottom: 10px;">Your Connected Channels</h3>
+                        <div id="my-channels-list">
+                            <!-- Dynamic list of user's connected channels -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========================================== -->
+            <!-- PAGE 3: CREATE PACKET & PARTNER DASHBOARD   -->
+            <!-- ========================================== -->
+            <section id="create-page" class="page-view" style="display: none;">
+                
+                <!-- Channel Status Warning (Locked if no channel connected) -->
+                <div id="no-channel-warning" class="view-section" style="display: none; background: rgba(229, 57, 53, 0.15); border: 1px solid #E53935; border-radius: 12px; padding: 15px; text-align: center; margin-bottom: 15px;">
+                    <h3 style="color: #FF5252; margin: 0 0 5px 0;">⚠️ No Channel Connected!</h3>
+                    <p style="font-size: 12px; color: #ccc; margin: 0 0 12px 0;">রেড প্যাকেট তৈরি করতে আপনাকে অবশ্যই আগে আপনার টেলিগ্রাম চ্যানেল ভেরিফাই ও অ্যাড করতে হবে।</p>
+                    <button type="button" onclick="AppRouter.switchPage('channels-page')" class="primary-btn" style="padding: 8px 15px; font-size: 12px;">
+                        Add Channel Now
+                    </button>
                 </div>
 
-                <div id="packet-list-container" class="packets-grid">
-                    <!-- Active dynamic packet items render here -->
+                <!-- Create Form (Unlocked when Channel is connected) -->
+                <div id="create-packet-container" class="view-section">
+                    <h2>Create Red Packet</h2>
+                    
+                    <!-- Reward Rate Banner -->
+                    <div style="background: rgba(76, 175, 80, 0.15); border: 1px solid #4CAF50; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 12px; color: #81C784;">
+                        🎉 <strong>Earn $0.002 USDT</strong> for every single Red Packet open in your channel!
+                    </div>
+
+                    <form id="create-packet-form">
+                        <div class="form-group">
+                            <label>Select Channel:</label>
+                            <select id="channel-dropdown" style="width: 100%; background: #121212; color: #fff; border: 1px solid #333; padding: 10px; border-radius: 8px;" required>
+                                <option value="">Select Connected Channel...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>1. Token Name:</label>
+                            <input type="text" id="token-name" placeholder="e.g. USDT, PEPE, BTC" required>
+                        </div>
+                        <div class="form-group">
+                            <label>2. Amount per User:</label>
+                            <input type="text" id="token-amount" placeholder="e.g. 0.01 USDT or 3000 PEPE" required>
+                        </div>
+                        <div class="form-group">
+                            <label>3. Open Limit (Users):</label>
+                            <input type="number" id="open-limit" placeholder="e.g. 500" required>
+                        </div>
+                        <div class="form-group">
+                            <label>4. Red Packet Link (Binance Only):</label>
+                            <input type="url" id="binance-link" placeholder="https://s.binance.com/..." required>
+                        </div>
+                        <button type="submit" id="publish-submit-btn" class="primary-btn">
+                            Create & Post Packet
+                        </button>
+                    </form>
                 </div>
+
+                <!-- Partner Earnings & Stats Dashboard -->
+                <div class="view-section" style="margin-top: 25px;">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h3>Total Packets</h3>
+                            <p id="stat-total-packets">0</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Total Opens</h3>
+                            <p id="stat-total-opens">0</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Total Earnings ($0.002/open)</h3>
+                            <p id="stat-total-earnings" data-rate="0.002">$0.000 USDT</p>
+                        </div>
+                    </div>
+
+                    <!-- Withdrawal & Profile Section -->
+                    <div class="profile-tabs" style="margin-top: 20px;">
+                        <button class="tab-btn active" onclick="Withdraw_Module.switchTab('income-tab')">Balance</button>
+                        <button class="tab-btn" onclick="Withdraw_Module.switchTab('withdraw-tab')">Withdraw</button>
+                    </div>
+
+                    <div id="income-tab" class="tab-content" style="margin-top: 10px;">
+                        <div class="balance-card">
+                            <h4>Withdrawable Balance</h4>
+                            <p id="bal-withdrawable">$0.000 USDT</p>
+                        </div>
+                    </div>
+
+                    <div id="withdraw-tab" class="tab-content" style="display: none; margin-top: 10px;">
+                        <form id="withdraw-form">
+                            <div class="form-group">
+                                <label>Binance UID:</label>
+                                <input type="text" id="binance-uid" placeholder="Enter your Binance UID" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Amount (USDT):</label>
+                                <input type="number" step="0.01" id="withdraw-amount" placeholder="Min $1.00" required>
+                            </div>
+                            <button type="submit" class="primary-btn">Request Withdraw</button>
+                        </form>
+                    </div>
+                </div>
+
             </section>
         </main>
 
-        <!-- Upgraded Modern Footer Section -->
+        <!-- Dynamic Modal: Post & Share Customizer -->
+        <div id="post-publish-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; padding: 15px;">
+            <div class="modal-content" style="background: #1e1e1e; border: 1px solid #FFD700; border-radius: 16px; width: 100%; max-width: 400px; padding: 20px; color: #fff;">
+                <h3 style="margin-top:0; color:#FFD700; font-size:18px; text-align:center;">Customize & Publish Post</h3>
+                
+                <div style="background: rgba(255, 215, 0, 0.15); border: 1px dashed #FFD700; border-radius: 8px; padding: 10px; margin-bottom: 15px; display: flex; justify-content: space-around; text-align: center;">
+                    <div>
+                        <small style="color: #aaa; font-size: 10px; display: block;">TOKEN</small>
+                        <strong id="modal-token-name" style="color: #FFD700; font-size: 14px;">USDT</strong>
+                    </div>
+                    <div style="border-left: 1px solid rgba(255,255,255,0.2);"></div>
+                    <div>
+                        <small style="color: #aaa; font-size: 10px; display: block;">REWARD</small>
+                        <strong id="modal-token-amt" style="color: #FFD700; font-size: 14px;">0.01 USDT</strong>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label style="font-size: 12px; color: #ccc; margin-bottom: 5px; display: block;">Post Caption / Title:</label>
+                    <textarea id="modal-post-caption" rows="3" style="width: 100%; background: #121212; border: 1px solid #333; color: #fff; padding: 10px; border-radius: 8px; font-size: 12px; resize: none; outline: none; box-sizing: border-box;"></textarea>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label style="font-size: 12px; color: #ccc; margin-bottom: 8px; display: block;">Target Channel:</label>
+                    <div id="modal-channel-list" style="max-height: 120px; overflow-y: auto; background: #121212; padding: 10px; border-radius: 8px; border: 1px solid #333;">
+                        <!-- Real channel names check-list populated via JS -->
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" id="btn-final-publish" onclick="RedPacket_Module.publishToSelectedChannels()" class="primary-btn" style="flex: 2; margin: 0;">
+                        🚀 Publish Now
+                    </button>
+                    <button type="button" onclick="RedPacket_Module.closePostModal()" class="cancel-btn" style="flex: 1; background: #333; color: #ccc; border: 1px solid #444; border-radius: 8px; font-weight: bold; cursor: pointer;">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Section -->
         <footer class="app-footer">
             <div class="footer-card">
                 <div class="footer-row">
-                    <!-- Official Channel Link (Bangla Label as requested) -->
                     <a href="https://t.me/BTCREDPACKETBOX" target="_blank" class="footer-pill-btn official-channel-btn">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21.198 2.433a2.242 2.242 0 0 0-1.022.215l-16.5 7.5a2.25 2.25 0 0 0 .126 4.137l4.015 1.338 1.54 4.885a1.5 1.5 0 0 0 2.65.418l2.67-3.23 4.316 3.18a2.25 2.25 0 0 0 3.54-1.48l3.1-15.5a2.25 2.25 0 0 0-2.435-2.663z"></path>
-                        </svg>
                         <span>অফিসিয়াল চ্যানেল</span>
                     </a>
                 </div>
-
                 <div class="footer-sub-bar">
                     <span>Support: <a href="https://t.me/Onlineadsofficial" target="_blank">@Onlineadsofficial</a></span>
                     <span>Sponsored by: <a href="https://t.me/DevTixoLab" target="_blank" class="sponsor-tag-link">DevTixoLab</a></span>
                 </div>
             </div>
         </footer>
+
+        <!-- Bottom Fixed Navigation Bar (3 Pages Router) -->
+        <nav class="bottom-nav">
+            <button class="bottom-nav-item active" id="nav-home" onclick="AppRouter.switchPage('home-page')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                <span>Home</span>
+            </button>
+            <button class="bottom-nav-item" id="nav-channels" onclick="AppRouter.switchPage('channels-page')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8 2a2 2 0 0 1-4 0"/></svg>
+                <span>Add Channel</span>
+            </button>
+            <button class="bottom-nav-item" id="nav-create" onclick="AppRouter.switchPage('create-page')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                <span>Create & Earn</span>
+            </button>
+        </nav>
     </div>
 
-    <!-- Main JavaScript Modules -->
+    <!-- Script to handle Router & App Execution -->
+    <script>
+        const AppRouter = {
+            switchPage(pageId) {
+                document.querySelectorAll('.page-view').forEach(el => el.style.display = 'none');
+                document.querySelectorAll('.bottom-nav-item').forEach(el => el.classList.remove('active'));
+                
+                const targetPage = document.getElementById(pageId);
+                if (targetPage) targetPage.style.display = 'block';
+
+                if (pageId === 'home-page') document.getElementById('nav-home').classList.add('active');
+                if (pageId === 'channels-page') document.getElementById('nav-channels').classList.add('active');
+                if (pageId === 'create-page') document.getElementById('nav-create').classList.add('active');
+            }
+        };
+
+        // Auto hide splash screen
+        document.addEventListener("DOMContentLoaded", () => {
+            setTimeout(() => {
+                const splash = document.getElementById("splash-screen");
+                if (splash) splash.style.display = "none";
+                document.getElementById("app-container").style.display = "block";
+            }, 1000);
+        });
+    </script>
+
+    <!-- Modular Script Imports -->
     <script type="module" src="js/app.js"></script>
     <script type="module" src="js/ads-manager.js"></script>
+    <script type="module" src="js/partner.js"></script>
+    <script type="module" src="js/dashboard.js"></script>
+    <script type="module" src="js/withdraw.js"></script>
+    <script type="module" src="js/verify.js"></script>
 </body>
-    </html>
+</html>
