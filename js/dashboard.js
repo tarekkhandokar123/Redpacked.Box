@@ -20,12 +20,13 @@ export const Dashboard_Module = {
     loadDashboardData: async function() {
         const user = Telegram_Controller.getUser();
         try {
-            // 1. Fetch channel name from admin profile
+            let adminData = {};
+            // 1. Fetch admin profile data
             const adminDoc = await getDoc(doc(db, "admins", user.id.toString()));
             if (adminDoc.exists()) {
-                const data = adminDoc.data();
+                adminData = adminDoc.data();
                 const chanElem = document.getElementById('dash-chan-name');
-                if (chanElem) chanElem.innerText = data.channelName || data.channelUsername || "My Channel";
+                if (chanElem) chanElem.innerText = adminData.channelName || adminData.channelUsername || "My Channel";
             }
             
             // 2. Fetch all Red Packets published by this admin from Firestore
@@ -37,7 +38,7 @@ export const Dashboard_Module = {
             const querySnapshot = await getDocs(q);
 
             let totalPackets = 0;
-            let totalOpens = 0;
+            let totalOpensFromPackets = 0;
             let listHTML = "";
 
             if (!querySnapshot.empty) {
@@ -46,7 +47,7 @@ export const Dashboard_Module = {
                     packets.push({ id: docSnap.id, ...docSnap.data() });
                 });
 
-                // Sort from newest to oldest (Client-side Sort)
+                // Client-side Sort: newest to oldest
                 packets.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
 
                 totalPackets = packets.length;
@@ -55,7 +56,7 @@ export const Dashboard_Module = {
                     const opened = packet.opened || 0;
                     const limit = packet.openLimit || 0;
                     const remaining = Math.max(0, limit - opened);
-                    totalOpens += opened;
+                    totalOpensFromPackets += opened;
 
                     const isActive = remaining > 0;
                     const statusBadge = isActive 
@@ -76,18 +77,19 @@ export const Dashboard_Module = {
                 listHTML = `<div style="text-align: center; color: #888; padding: 25px;">No Red Packets published yet.</div>`;
             }
 
-            // Earnings calculation per claim based on $0.002 CPM rate
-            const totalEarnings = (totalOpens * 0.002).toFixed(3);
+            // Total opens and earnings priority
+            const displayOpens = adminData.totalOpens !== undefined ? adminData.totalOpens : totalOpensFromPackets;
+            const displayEarnings = adminData.totalEarnings !== undefined ? adminData.totalEarnings : (displayOpens * 0.002);
 
-            // Render original live data to UI elements
+            // Render live data to UI elements
             const statPackets = document.getElementById('stat-total-packets');
             const statOpens = document.getElementById('stat-total-opens');
             const statEarnings = document.getElementById('stat-total-earnings');
             const packetsList = document.getElementById('admin-packets-list');
 
             if (statPackets) statPackets.innerText = totalPackets.toLocaleString();
-            if (statOpens) statOpens.innerText = totalOpens.toLocaleString();
-            if (statEarnings) statEarnings.innerText = `$${totalEarnings} USDT`;
+            if (statOpens) statOpens.innerText = displayOpens.toLocaleString();
+            if (statEarnings) statEarnings.innerText = `$${Number(displayEarnings).toFixed(3)} USDT`;
             if (packetsList) packetsList.innerHTML = listHTML;
 
         } catch (e) {
@@ -184,7 +186,6 @@ export const Dashboard_Module = {
             UI_Helper.showToast("⏳ Publishing Red Packet to Live Database...");
 
             try {
-                // Read verified channel username of admin
                 let channelUsername = "";
                 let channelTitle = "";
                 const adminSnap = await getDoc(doc(db, "admins", user.id.toString()));
@@ -194,7 +195,6 @@ export const Dashboard_Module = {
                     channelTitle = admData.channelName || "";
                 }
 
-                // Save live data directly to Firestore 'red_packets' collection
                 const docRef = await addDoc(collection(db, "red_packets"), {
                     creatorTelegramId: user.id.toString(),
                     creatorUsername: user.username,
@@ -210,14 +210,11 @@ export const Dashboard_Module = {
                     createdAt: serverTimestamp()
                 });
 
-                // Generate bot link for users to claim in app
                 const botUsername = "RedPacketBoxBot";
                 generatedPacketSlug = `https://t.me/${botUsername}?startapp=${docRef.id}`;
 
-                // Save cooldown timestamp
                 localStorage.setItem('admin_last_publish', Date.now().toString());
 
-                // Hide form and display success box
                 form.style.display = 'none';
                 
                 const successBox = document.getElementById('success-link-box');
