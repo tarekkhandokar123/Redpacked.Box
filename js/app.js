@@ -121,7 +121,7 @@ export const Ads_Controller = {
 };
 
 // ==========================================
-// 5. PACKET LOGIC CONTROLLER (ACTIVE PACKET FILTER FIX)
+// 5. PACKET LOGIC CONTROLLER
 // ==========================================
 export const Packet_Controller = {
     currentPacketData: null,
@@ -205,7 +205,7 @@ export const Packet_Controller = {
             const claimRecordId = `${this.currentPacketId}_${user.id}`;
 
             try {
-                // ১. চেক করা ইউজার আগে থেকে ক্লেইম করেছে কিনা
+                // ১. ইউজার আগে ক্লেইম করেছে কিনা পরীক্ষা
                 const claimRef = doc(db, "claim_records", claimRecordId);
                 const claimSnap = await getDoc(claimRef);
                 if (claimSnap.exists()) {
@@ -216,10 +216,10 @@ export const Packet_Controller = {
                 if (giftBoxBtn) giftBoxBtn.classList.add('shake');
                 UI_Controller.showToast("🎬 Loading rewarded ad...");
 
-                // ২. Dynamic Waterfall Ad প্লে করা
+                // ২. এড দেখান
                 await Ads_Controller.playAd();
 
-                // ৩. ক্লেইম রেকর্ড তৈরি ও কাউন্ট বাড়ানো
+                // ৩. ক্লেইম রেকর্ড যোগ করা
                 await setDoc(doc(db, "claim_records", claimRecordId), {
                     redPacketId: this.currentPacketId,
                     telegramUserId: user.id,
@@ -228,17 +228,28 @@ export const Packet_Controller = {
                     openedAt: serverTimestamp()
                 });
 
+                // ৪. রেড প্যাকেটের ওপেন কাউন্ট ১ বাড়ানো
                 await updateDoc(doc(db, "red_packets", this.currentPacketId), {
                     opened: increment(1)
                 });
 
-                // ৪. আপডেট UI
+                // ৫. এডমিনের (Creator) একাউন্টে ওপেন সংখ্যা ও রিওয়ার্ড ($0.002 CPM) আপডেট
+                const creatorTelegramId = this.currentPacketData?.creatorTelegramId;
+                if (creatorTelegramId) {
+                    const adminRef = doc(db, "admins", creatorTelegramId.toString());
+                    await setDoc(adminRef, {
+                        totalOpens: increment(1),
+                        totalEarnings: increment(0.002),
+                        balance: increment(0.002)
+                    }, { merge: true });
+                }
+
+                // ৬. UI আপডেট ও রিডাইরেক্ট
                 if (giftBoxBtn) giftBoxBtn.classList.remove('shake');
                 this.currentPacketData.opened = openedCount + 1;
                 UI_Controller.updateProgressBar(this.currentPacketData.opened, limitCount);
                 UI_Controller.showToast("✅ Ad completed! Opening Binance Link...");
 
-                // ৫. বিন্যান্স লিংকে রিডাইরেক্ট
                 const binanceUrl = this.currentPacketData.binanceLink;
                 if (binanceUrl) {
                     if (User_Controller.tg?.openLink) {
@@ -260,7 +271,6 @@ export const Packet_Controller = {
         if (giftBoxBtn) giftBoxBtn.onclick = handleOpenAction;
     },
 
-    // সক্রিয় ও নতুন রেড প্যাকেট দেখানোর জন্য ডায়নামিক ফিল্টার
     loadPacketList: async function() {
         const viewSingle = document.getElementById('view-single');
         const viewList = document.getElementById('view-list');
@@ -295,7 +305,6 @@ export const Packet_Controller = {
                 const openedCount = data.opened || 0;
                 const isInactiveStatus = data.status && data.status !== "active";
 
-                // যেগুলো শেষ হয়ে গেছে বা ইনঅ্যাক্টিভ সেগুলো হাইড হবে
                 if (openedCount >= limitCount || isInactiveStatus) {
                     return;
                 }
